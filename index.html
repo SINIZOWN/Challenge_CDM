@@ -230,8 +230,8 @@
         <div class="field">
           <label>Joueur</label>
           <select id="inp-player">
-            <option value="0">Nils</option>
-            <option value="1">Kéké</option>
+            <option value="0">Joueur 1</option>
+            <option value="1">Joueur 2</option>
           </select>
         </div>
         <div class="field">
@@ -252,8 +252,8 @@
 
     <div class="filters">
       <button class="filter-btn active" onclick="setFilter('all', this)">Tous</button>
-      <button class="filter-btn" onclick="setFilter('0', this)" id="filter-p1">Nils</button>
-      <button class="filter-btn" onclick="setFilter('1', this)" id="filter-p2">Kéké</button>
+      <button class="filter-btn" onclick="setFilter('0', this)" id="filter-p1">Joueur 1</button>
+      <button class="filter-btn" onclick="setFilter('1', this)" id="filter-p2">Joueur 2</button>
       <button class="filter-btn" onclick="setFilter('pending', this)">En cours</button>
       <button class="filter-btn" onclick="setFilter('won', this)">Gagnés</button>
       <button class="filter-btn" onclick="setFilter('lost', this)">Perdus</button>
@@ -287,7 +287,7 @@
 <script>
 // ── STATE ──
 const BUDGET = 100;
-let state = { players: ['Nils', 'Kéké'], bets: [] };
+let state = { players: ['Joueur 1', 'Joueur 2'], bets: [] };
 let activeFilter = 'all';
 let db = null;
 let chart = null;
