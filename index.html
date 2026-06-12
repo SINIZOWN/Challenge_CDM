@@ -266,6 +266,9 @@ input[type=number]::-webkit-inner-spin-button{opacity:.4}
   </div>
 </div>
 
+
+<!-- APP -->
+<div id="app">
 <!-- JOUEURS MODAL -->
 <div class="modal-backdrop" id="players-modal" style="display:none" onclick="if(event.target===this)closePlayersModal()">
   <div class="modal">
@@ -278,9 +281,6 @@ input[type=number]::-webkit-inner-spin-button{opacity:.4}
     <p style="font-size:11px;color:var(--muted);margin-top:10px">Le budget de départ est de 100 € par joueur.</p>
   </div>
 </div>
-
-<!-- APP -->
-<div id="app">
 <div class="page">
   <header class="site-header">
     <div>
@@ -373,7 +373,7 @@ input[type=number]::-webkit-inner-spin-button{opacity:.4}
 
     <div class="filters">
       <button class="filter-btn active" onclick="setFilter('all',this)">Tous</button>
-      <button class="filter-btn" id="filter-players-row"></button>
+      <span id="filter-players-row"></span>
       <button class="filter-btn" onclick="setFilter('simple',this)">Simples</button>
       <button class="filter-btn" onclick="setFilter('combo',this)">Combinés</button>
       <button class="filter-btn" onclick="setFilter('system',this)">Systèmes</button>
@@ -540,8 +540,8 @@ function ensureCurrentPlayer(){
 }
 
 // ── PLAYERS MODAL ──
-function openPlayersModal(){renderPlayersList();document.getElementById('players-modal').style.display='flex'}
-function closePlayersModal(){document.getElementById('players-modal').style.display='none'}
+function openPlayersModal(){var m=document.getElementById('players-modal');if(!m)return;renderPlayersList();m.style.display='flex'}
+function closePlayersModal(){var m=document.getElementById('players-modal');if(m)m.style.display='none'}
 function renderPlayersList(){
   const el=document.getElementById('players-list');
   el.innerHTML=state.players.map((p,i)=>{
@@ -659,7 +659,7 @@ function syncPlayerSelects(){
   // filter player buttons
   const fRow=document.getElementById('filter-players-row');
   if(fRow){
-    fRow.outerHTML=state.players.map((p,i)=>`<button class="filter-btn" onclick="setFilter('p${i}',this)">${esc(p.name)}</button>`).join('');
+    fRow.innerHTML=state.players.map((p,i)=>`<button class="filter-btn" onclick="setFilter('p${i}',this)">${esc(p.name)}</button>`).join('');
   }
 }
 
