@@ -1055,7 +1055,7 @@ function switchTab(name,e){
   e.currentTarget.classList.add('active');
   if(name==='graphique')renderChart();if(name==='stats')renderStats();
 }
-function renderAll(){renderScoreboard();renderBets()}
+function renderAll(){renderScoreboard();renderBets();renderPlayerSelects();}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 let toastTimer;
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2800)}
