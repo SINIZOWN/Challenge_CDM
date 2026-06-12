@@ -224,6 +224,17 @@ input[type=number]::-webkit-inner-spin-button{opacity:.4}
 
 #app{display:none}
 
+
+/* CASH-OUT */
+.btn-cashout{background:none;border:.5px solid #f0a44a44;color:#f0a44a;border-radius:8px;padding:3px 9px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s}
+.btn-cashout:hover{background:#f0a44a22;border-color:#f0a44a}
+.cashout-tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#f0a44a;background:#f0a44a14;border-radius:20px;padding:2px 8px;white-space:nowrap}
+.cashout-modal-inner{background:var(--surface2);border-radius:12px;padding:14px 16px;margin-bottom:12px}
+.cashout-modal-row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;align-items:center}
+.cashout-modal-row:last-child{margin-bottom:0}
+.cashout-modal-lbl{color:var(--muted)}
+.cashout-modal-val{font-weight:600}
+
 /* CDM TEAMS datalist */
 @media(max-width:700px){
   .fg-simple{grid-template-columns:1fr 1fr}
@@ -778,6 +789,7 @@ function getStats(pi){
     if(b.type==='system'){const r=calcSystemResult(b);totalStaked+=r.staked;totalReturns+=r.returns;pendingStake+=r.pendingStake;won+=r.wonCombos;lost+=r.lostCombos;pending+=r.pendingCombos;}
     else if(b.status==='won'){totalStaked+=b.stake;totalReturns+=b.stake*b.odds;won++;}
     else if(b.status==='lost'){totalStaked+=b.stake;lost++;}
+    else if(b.status==='cashout'){totalStaked+=b.stake;totalReturns+=(b.cashout||0);won++;}
     else{pendingStake+=b.stake;pending++;}
   });
   const pnl=totalReturns-totalStaked;
@@ -836,7 +848,7 @@ function renderBets(){
     const p=state.players[b.player]||{name:'?',color:'#888'};
     const pChip=`<span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:${p.color}18;color:${p.color}">${esc(p.name)}</span>`;
     const typeChip=`<span class="chip chip-${type}">${type==='simple'?'Simple':type==='combo'?'Combiné':'Système'}</span>`;
-    const sc={won:'chip-won',lost:'chip-lost',pending:'chip-pending'}[b.status];
+    const sc={won:'chip-won',lost:'chip-lost',pending:'chip-pending',cashout:'chip-pending'}[b.status]||'chip-pending';
     const opts=['pending','won','lost'].map(s=>`<option value="${s}" ${b.status===s?'selected':''}>${s==='pending'?'⏳ En cours':s==='won'?'✓ Gagné':'✗ Perdu'}</option>`).join('');
     const owStr=b.onwho?formatOnWho(b.onwho):'';
     let gainHtml='<span style="color:var(--muted)">—</span>';
@@ -845,11 +857,13 @@ function renderBets(){
       matchCell=esc(b.match);
       if(b.status==='won')gainHtml=`<span class="gain-pos">+${((b.stake*b.odds)-b.stake).toFixed(2)} €</span>`;
       else if(b.status==='lost')gainHtml=`<span class="gain-neg">-${b.stake.toFixed(2)} €</span>`;
+      else if(b.status==='cashout'&&b.cashout!=null){const net=b.cashout-b.stake;gainHtml=`<span class="cashout-tag">💰 ${b.cashout.toFixed(2)} €<span style="font-weight:400;opacity:.7">(${net>=0?'+':''}${net.toFixed(2)} €)</span></span>`;}
     }else if(type==='combo'){
       const n=b.selections?b.selections.length:0;
       matchCell=`Combiné ${n} sél. <button class="expand-btn" onclick="toggleDetail(${b.idx})">▾</button>`;
       if(b.status==='won')gainHtml=`<span class="gain-pos">+${((b.stake*b.odds)-b.stake).toFixed(2)} €</span>`;
       else if(b.status==='lost')gainHtml=`<span class="gain-neg">-${b.stake.toFixed(2)} €</span>`;
+      else if(b.status==='cashout'&&b.cashout!=null){const net=b.cashout-b.stake;gainHtml=`<span class="cashout-tag">💰 ${b.cashout.toFixed(2)} €<span style="font-weight:400;opacity:.7">(${net>=0?'+':''}${net.toFixed(2)} €)</span></span>`;}
       if(b.selections){
         const selHtml=b.selections.map((s,i)=>`<span class="sel-${s.status||'pending'}">${esc(s.match)} @${s.odds} <select class="status-sel" style="font-size:10px" onchange="updateComboSel(${b.idx},${i},this.value)"><option value="pending" ${(s.status||'pending')==='pending'?'selected':''}>⏳</option><option value="won" ${s.status==='won'?'selected':''}>✓</option><option value="lost" ${s.status==='lost'?'selected':''}>✗</option></select></span>`).join(' · ');
         extraRow=`<tr class="bet-detail-row" id="detail-${b.idx}" style="display:none"><td colspan="7"><div class="bet-detail-inner">${selHtml}</div></td></tr>`;
@@ -869,14 +883,21 @@ function renderBets(){
         extraRow=`<tr class="bet-detail-row" id="detail-${b.idx}" style="display:none"><td colspan="7"><div class="bet-detail-inner">${selHtml}</div></td></tr>`;
       }
     }
+    const isCashout=b.status==='cashout';
+    const statusCell=isCashout
+      ?`<span class="cashout-tag" style="cursor:pointer" onclick="openCashoutModal(${b.idx})" title="Modifier le cash-out">💰 Cash-out</span>`
+      :`<span class="chip ${sc}"><select class="status-sel" onchange="updateStatus(${b.idx},this.value)">${opts}</select></span>`;
+    const coBtn=isCashout
+      ?`<button class="btn-cashout" onclick="removeCashout(${b.idx})" title="Annuler cash-out" style="font-size:10px;color:var(--muted)">↩</button>`
+      :`<button class="btn-cashout" onclick="openCashoutModal(${b.idx})" title="Cash-out">💰</button>`;
     return`<tr>
       <td>${pChip}<br/>${typeChip}</td>
       <td>${matchCell}${owStr?`<div class="on-who-tag"><span>${owStr}</span></div>`:''}</td>
       <td>${type==='system'?b.stake+' €/c':b.stake.toFixed(2)+' €'}</td>
       <td>${oddsCell}</td>
       <td>${gainHtml}</td>
-      <td><span class="chip ${sc}"><select class="status-sel" onchange="updateStatus(${b.idx},this.value)">${opts}</select></span></td>
-      <td><button class="btn-del" onclick="deleteBet(${b.idx})">×</button></td>
+      <td>${statusCell}</td>
+      <td style="display:flex;gap:4px;align-items:center">${coBtn}<button class="btn-del" onclick="deleteBet(${b.idx})">×</button></td>
     </tr>${extraRow}`;
   }).join('');
   container.innerHTML=`<table class="bets-table"><thead><tr><th>Joueur</th><th>Pari</th><th>Mise</th><th>Cote</th><th>Gain/Perte</th><th>Statut</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
@@ -926,6 +947,7 @@ function renderChart(){
     let bal=BUDGET;const pts=[BUDGET];
     resolved.filter(b=>b.player===pi).forEach(b=>{
       if(b.type==='system'){const r=calcSystemResult(b);bal+=r.returns-r.staked;}
+      else if(b.status==='cashout') bal+=(b.cashout||0)-b.stake;
       else bal+=b.status==='won'?(b.stake*b.odds)-b.stake:-b.stake;
       pts.push(parseFloat(bal.toFixed(2)));
     });
@@ -1014,7 +1036,7 @@ function addSimple(){
   document.getElementById('simple-calc-preview').textContent='';
   updateOnWhoFields();toast('Pari ajouté ✓');
 }
-function updateStatus(i,val){state.bets[i].status=val;save();renderAll()}
+function updateStatus(i,val){state.bets[i].status=val;if(val!=='cashout')delete state.bets[i].cashout;save();renderAll()}
 function deleteBet(i){if(!confirm('Supprimer ce pari ?'))return;state.bets.splice(i,1);save();renderAll();toast('Pari supprimé.')}
 function setFilter(f,btn){activeFilter=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderBets()}
 function setBetType(t,btn){
@@ -1037,9 +1059,88 @@ function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;',
 let toastTimer;
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2800)}
 
+
+// ── CASH-OUT ──
+let cashoutBetIdx = -1;
+
+function openCashoutModal(idx) {
+  cashoutBetIdx = idx;
+  const b = state.bets[idx];
+  const p = state.players[b.player] || {name:'?', color:'#888'};
+  const potGain = b.type === 'simple' ? ((b.stake * b.odds) - b.stake).toFixed(2) : '—';
+  const maxReturn = b.type === 'simple' ? (b.stake * b.odds).toFixed(2) : b.stake.toFixed(2);
+  const alreadyCO = b.cashout != null;
+  document.getElementById('cashout-modal-info').innerHTML = `
+    <div class="cashout-modal-inner">
+      <div class="cashout-modal-row"><span class="cashout-modal-lbl">Joueur</span><span class="cashout-modal-val" style="color:${p.color}">${esc(p.name)}</span></div>
+      <div class="cashout-modal-row"><span class="cashout-modal-lbl">Pari</span><span class="cashout-modal-val" style="max-width:180px;text-align:right;font-size:12px">${esc(b.match||'Combiné')}</span></div>
+      <div class="cashout-modal-row"><span class="cashout-modal-lbl">Mise</span><span class="cashout-modal-val">${b.stake.toFixed(2)} €</span></div>
+      ${b.type==='simple'?`<div class="cashout-modal-row"><span class="cashout-modal-lbl">Gain potentiel</span><span class="cashout-modal-val" style="color:var(--won)">+${potGain} €</span></div>`:''}
+      ${alreadyCO?`<div class="cashout-modal-row"><span class="cashout-modal-lbl">Cash-out actuel</span><span class="cashout-modal-val" style="color:#f0a44a">${b.cashout.toFixed(2)} €</span></div>`:''}
+    </div>`;
+  document.getElementById('cashout-amount').value = b.cashout != null ? b.cashout : '';
+  updateCashoutPreview();
+  document.getElementById('cashout-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('cashout-amount').focus(), 80);
+}
+
+function closeCashoutModal() {
+  document.getElementById('cashout-modal').style.display = 'none';
+  cashoutBetIdx = -1;
+}
+
+function updateCashoutPreview() {
+  const b = cashoutBetIdx >= 0 ? state.bets[cashoutBetIdx] : null;
+  if (!b) return;
+  const amount = parseFloat(document.getElementById('cashout-amount').value);
+  const el = document.getElementById('cashout-preview');
+  if (isNaN(amount) || amount < 0) { el.innerHTML = ''; return; }
+  const net = (amount - b.stake).toFixed(2);
+  const netNum = parseFloat(net);
+  const col = netNum >= 0 ? 'var(--won)' : 'var(--lost)';
+  const sign = netNum >= 0 ? '+' : '';
+  el.innerHTML = `Résultat net : <span style="color:${col};font-weight:700">${sign}${net} €</span>`;
+}
+
+function confirmCashout() {
+  if (cashoutBetIdx < 0) return;
+  const amount = parseFloat(document.getElementById('cashout-amount').value);
+  if (isNaN(amount) || amount < 0) { toast('Entre un montant valide.'); return; }
+  state.bets[cashoutBetIdx].cashout = parseFloat(amount.toFixed(2));
+  state.bets[cashoutBetIdx].status = 'cashout';
+  save(); renderAll();
+  closeCashoutModal();
+  toast('Cash-out enregistré ✓');
+}
+
+function removeCashout(idx) {
+  if (!confirm('Annuler le cash-out ?')) return;
+  delete state.bets[idx].cashout;
+  state.bets[idx].status = 'pending';
+  save(); renderAll();
+  toast('Cash-out annulé.');
+}
+
 // INIT
 updateOnWhoFields();renderComboSels();renderSysSels();renderSimSels();
 </script>
+
+
+<!-- CASH-OUT MODAL -->
+<div class="modal-backdrop" id="cashout-modal" style="display:none" onclick="if(event.target===this)closeCashoutModal()">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-title">💰 Cash-out <button class="btn-close" onclick="closeCashoutModal()">×</button></div>
+    <div id="cashout-modal-info"></div>
+    <div class="auth-field" style="margin-bottom:10px">
+      <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Montant récupéré (€)</label>
+      <input id="cashout-amount" type="number" min="0" step="0.01" placeholder="ex : 7.50"
+        style="width:100%;background:var(--bg);border:.5px solid var(--border2);border-radius:var(--radius);padding:10px 12px;color:var(--text);font-size:15px"
+        oninput="updateCashoutPreview()" onkeydown="if(event.key==='Enter')confirmCashout()"/>
+    </div>
+    <div id="cashout-preview" style="font-size:13px;color:var(--muted);min-height:18px;margin-bottom:12px"></div>
+    <button class="btn-primary" onclick="confirmCashout()">✓ Confirmer le cash-out</button>
+  </div>
+</div>
 
 <!-- JOUEURS MODAL -->
 <div class="modal-backdrop" id="players-modal" style="display:none" onclick="if(event.target===this)closePlayersModal()">
