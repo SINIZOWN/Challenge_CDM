@@ -515,14 +515,29 @@ auth.onAuthStateChanged(user=>{
 });
 
 // ── FIREBASE ──
+function migrateData(d){
+  // Ancienne version: players = ["Joueur 1","Joueur 2"] (strings)
+  // Nouvelle version: players = [{id,name,color}]
+  let players=d.players||[];
+  if(players.length>0 && typeof players[0]==='string'){
+    players=players.map(function(name,i){return{id:'legacy_'+i,name:name,color:PALETTE[i%PALETTE.length]}});
+  }
+  // S'assurer que chaque bet a un champ type
+  let bets=(d.bets||[]).map(function(b){return Object.assign({type:'simple'},b)});
+  return{players:players,bets:bets};
+}
 function startListening(){
   db.ref('challenge').on('value',snap=>{
     const d=snap.val();
     if(d){
-      state.players=d.players||[];
-      state.bets=d.bets||[];
+      const m=migrateData(d);
+      state.players=m.players;
+      state.bets=m.bets;
+      // Si migration détectée, on sauvegarde le nouveau format immédiatement
+      if(d.players && d.players.length>0 && typeof d.players[0]==='string'){
+        save();
+      }
     }
-    // Auto-add current user if not in list
     ensureCurrentPlayer();
     renderAll();
   });
