@@ -818,7 +818,30 @@ function renderScoreboard(){
   }).join('');
   syncPlayerSelects();
 }
-
+function renderPlayerSelects() {
+  // Liste des IDs des balises <select> dédiées aux joueurs
+  const selectIds = ['inp-player', 'combo-player', 'sys-player'];
+  
+  selectIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    
+    // On sauvegarde l'éventuelle sélection actuelle de l'utilisateur
+    const currentVal = el.value; 
+    
+    if (state.players && state.players.length > 0) {
+      // Génération des options <option> pour chaque joueur dans le state
+      el.innerHTML = state.players.map(p => 
+        `<option value="${esc(p.id)}">${esc(p.name)}</option>`
+      ).join('');
+    } else {
+      el.innerHTML = '<option value="">Aucun joueur disponible</option>';
+    }
+    
+    // On restaure la sélection si elle existe encore
+    if (currentVal) el.value = currentVal;
+  });
+}
 // ── BETS ──
 function renderBets(){
   const sort=document.getElementById('sort-sel').value;
