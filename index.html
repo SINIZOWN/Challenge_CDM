@@ -269,18 +269,6 @@ input[type=number]::-webkit-inner-spin-button{opacity:.4}
 
 <!-- APP -->
 <div id="app">
-<!-- JOUEURS MODAL -->
-<div class="modal-backdrop" id="players-modal" style="display:none" onclick="if(event.target===this)closePlayersModal()">
-  <div class="modal">
-    <div class="modal-title">👥 Participants <button class="btn-close" onclick="closePlayersModal()">×</button></div>
-    <div id="players-list"></div>
-    <div class="add-player-row">
-      <input id="new-player-name" type="text" placeholder="Pseudo du nouveau joueur" onkeydown="if(event.key==='Enter')addPlayer()"/>
-      <button class="btn-sm" onclick="addPlayer()">+ Ajouter</button>
-    </div>
-    <p style="font-size:11px;color:var(--muted);margin-top:10px">Le budget de départ est de 100 € par joueur.</p>
-  </div>
-</div>
 <div class="page">
   <header class="site-header">
     <div>
@@ -1034,5 +1022,18 @@ function toast(msg){const el=document.getElementById('toast');el.textContent=msg
 // INIT
 updateOnWhoFields();renderComboSels();renderSysSels();renderSimSels();
 </script>
+
+<!-- JOUEURS MODAL -->
+<div class="modal-backdrop" id="players-modal" style="display:none" onclick="if(event.target===this)closePlayersModal()">
+  <div class="modal">
+    <div class="modal-title">👥 Participants <button class="btn-close" onclick="closePlayersModal()">×</button></div>
+    <div id="players-list"></div>
+    <div class="add-player-row">
+      <input id="new-player-name" type="text" placeholder="Pseudo du nouveau joueur" onkeydown="if(event.key==='Enter')addPlayer()"/>
+      <button class="btn-sm" onclick="addPlayer()">+ Ajouter</button>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin-top:10px">Le budget de départ est de 100 € par joueur.</p>
+  </div>
+</div>
 </body>
 </html>
