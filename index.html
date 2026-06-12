@@ -1,427 +1,790 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>⚽ Challenge Paris — Coupe du Monde</title>
-
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg: #0d0d0d; --surface: #161616; --surface2: #1e1e1e;
-  --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.14);
-  --text: #f0ede8; --muted: #888;
-  --p1: #c8f04a; --p2: #4af0c8;
-  --won: #4af09a; --lost: #f04a6a; --pending: #f0c84a;
-  --radius: 10px; --radius-lg: 16px;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d0d;--surface:#161616;--surface2:#1e1e1e;--surface3:#252525;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+  --text:#f0ede8;--muted:#888;
+  --p1:#c8f04a;--p2:#4af0c8;
+  --won:#4af09a;--lost:#f04a6a;--pending:#f0c84a;
+  --radius:10px;--radius-lg:16px;
 }
-html { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; font-size: 15px; }
-body { min-height: 100vh; padding: 0 0 4rem; }
-input, select, button { font-family: inherit; font-size: 14px; }
-input[type=number]::-webkit-inner-spin-button { opacity: 0.4; }
-.page { max-width: 860px; margin: 0 auto; padding: 0 1.25rem; }
+html{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:15px}
+body{min-height:100vh;padding:0 0 5rem}
+input,select,button{font-family:inherit;font-size:14px}
+input[type=number]::-webkit-inner-spin-button{opacity:.4}
+.page{max-width:920px;margin:0 auto;padding:0 1.25rem}
 
-/* ── AUTH SCREEN ── */
-#auth-screen {
-  min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem;
-}
-.auth-box {
-  background: var(--surface); border: 0.5px solid var(--border2);
-  border-radius: var(--radius-lg); padding: 2rem; width: 100%; max-width: 380px;
-}
-.auth-logo { font-size: 28px; margin-bottom: 6px; }
-.auth-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
-.auth-sub { font-size: 13px; color: var(--muted); margin-bottom: 1.75rem; }
-.auth-tabs { display: flex; gap: 4px; background: var(--bg); border-radius: var(--radius); padding: 3px; margin-bottom: 1.25rem; }
-.auth-tab { flex: 1; background: transparent; border: none; color: var(--muted); font-size: 13px; font-weight: 500; padding: 7px; border-radius: 8px; cursor: pointer; transition: all 0.15s; }
-.auth-tab.active { background: var(--surface2); color: var(--text); }
-.auth-field { margin-bottom: 10px; }
-.auth-field label { font-size: 11px; color: var(--muted); display: block; margin-bottom: 4px; }
-.auth-field input {
-  width: 100%; background: var(--bg); border: 0.5px solid var(--border2);
-  border-radius: var(--radius); padding: 10px 12px; color: var(--text);
-}
-.auth-field input::placeholder { color: #555; }
-.auth-field input:focus { outline: none; border-color: var(--p1); }
-.btn-primary {
-  width: 100%; background: var(--p1); color: #0d0d0d; border: none;
-  border-radius: var(--radius); padding: 11px; font-weight: 700; font-size: 14px;
-  cursor: pointer; margin-top: 6px; transition: opacity 0.15s;
-}
-.btn-primary:hover { opacity: 0.88; }
-.divider { display: flex; align-items: center; gap: 10px; margin: 14px 0; color: var(--muted); font-size: 12px; }
-.divider::before, .divider::after { content: ''; flex: 1; height: 0.5px; background: var(--border2); }
-.btn-google {
-  width: 100%; background: var(--surface2); color: var(--text);
-  border: 0.5px solid var(--border2); border-radius: var(--radius);
-  padding: 10px; font-size: 14px; font-weight: 500; cursor: pointer;
-  display: flex; align-items: center; justify-content: center; gap: 10px;
-  transition: background 0.15s;
-}
-.btn-google:hover { background: #2a2a2a; }
-.google-icon { width: 18px; height: 18px; }
-.auth-error { font-size: 12px; color: var(--lost); margin-top: 8px; min-height: 16px; text-align: center; }
+/* AUTH */
+#auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem}
+.auth-box{background:var(--surface);border:.5px solid var(--border2);border-radius:var(--radius-lg);padding:2rem;width:100%;max-width:380px}
+.auth-logo{font-size:28px;margin-bottom:6px}
+.auth-title{font-size:18px;font-weight:700;margin-bottom:4px}
+.auth-sub{font-size:13px;color:var(--muted);margin-bottom:1.75rem}
+.auth-tabs{display:flex;gap:4px;background:var(--bg);border-radius:var(--radius);padding:3px;margin-bottom:1.25rem}
+.auth-tab{flex:1;background:transparent;border:none;color:var(--muted);font-size:13px;font-weight:500;padding:7px;border-radius:8px;cursor:pointer;transition:all .15s}
+.auth-tab.active{background:var(--surface2);color:var(--text)}
+.auth-field{margin-bottom:10px}
+.auth-field label{font-size:11px;color:var(--muted);display:block;margin-bottom:4px}
+.auth-field input{width:100%;background:var(--bg);border:.5px solid var(--border2);border-radius:var(--radius);padding:10px 12px;color:var(--text)}
+.auth-field input:focus{outline:none;border-color:var(--p1)}
+.btn-primary{width:100%;background:var(--p1);color:#0d0d0d;border:none;border-radius:var(--radius);padding:11px;font-weight:700;font-size:14px;cursor:pointer;margin-top:6px}
+.btn-primary:hover{opacity:.88}
+.divider{display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--muted);font-size:12px}
+.divider::before,.divider::after{content:'';flex:1;height:.5px;background:var(--border2)}
+.btn-google{width:100%;background:var(--surface2);color:var(--text);border:.5px solid var(--border2);border-radius:var(--radius);padding:10px;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px}
+.btn-google:hover{background:#2a2a2a}
+.auth-error{font-size:12px;color:var(--lost);margin-top:8px;min-height:16px;text-align:center}
 
-/* ── HEADER ── */
-.site-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 1.5rem 0 1.25rem; border-bottom: 0.5px solid var(--border2); margin-bottom: 1.75rem;
-}
-.site-header h1 { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; }
-.site-header .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
-.header-right { display: flex; align-items: center; gap: 10px; }
-.sync-badge { font-size: 11px; padding: 4px 10px; border-radius: 20px; border: 0.5px solid var(--border2); color: var(--muted); display: flex; align-items: center; gap: 5px; }
-.sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
-.sync-dot.ok { background: var(--won); }
-.user-chip { font-size: 11px; padding: 4px 10px; border-radius: 20px; border: 0.5px solid var(--border2); color: var(--muted); display: flex; align-items: center; gap: 6px; }
-.btn-logout { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 12px; padding: 0; }
-.btn-logout:hover { color: var(--lost); }
+/* HEADER */
+.site-header{display:flex;align-items:center;justify-content:space-between;padding:1.5rem 0 1.25rem;border-bottom:.5px solid var(--border2);margin-bottom:1.75rem;flex-wrap:wrap;gap:10px}
+.site-header h1{font-size:17px;font-weight:600;letter-spacing:-.3px}
+.site-header .sub{font-size:12px;color:var(--muted);margin-top:2px}
+.header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sync-badge{font-size:11px;padding:4px 10px;border-radius:20px;border:.5px solid var(--border2);color:var(--muted);display:flex;align-items:center;gap:5px}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0}
+.sync-dot.ok{background:var(--won)}
+.user-chip{font-size:11px;padding:4px 10px;border-radius:20px;border:.5px solid var(--border2);color:var(--muted);display:flex;align-items:center;gap:6px}
+.btn-logout{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0}
+.btn-logout:hover{color:var(--lost)}
+.btn-icon{background:var(--surface2);border:.5px solid var(--border);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--muted);cursor:pointer;white-space:nowrap}
+.btn-icon:hover{color:var(--text);border-color:var(--border2)}
 
-/* ── SCOREBOARD ── */
-.scoreboard { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.75rem; }
-.player-card {
-  background: var(--surface); border: 0.5px solid var(--border);
-  border-radius: var(--radius-lg); padding: 1.25rem; position: relative; overflow: hidden;
-}
-.player-card.leading { border-color: var(--p1); }
-.player-card.leading-2 { border-color: var(--p2); }
-.player-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: transparent; }
-.player-card.leading::before { background: var(--p1); }
-.player-card.leading-2::before { background: var(--p2); }
-.player-top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-.avatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
-.avatar-1 { background: rgba(200,240,74,0.15); color: var(--p1); }
-.avatar-2 { background: rgba(74,240,200,0.15); color: var(--p2); }
-.player-name-input { background: transparent; border: none; outline: none; font-size: 15px; font-weight: 600; color: var(--text); width: 100%; cursor: pointer; border-bottom: 1px solid transparent; transition: border-color 0.15s; }
-.player-name-input:focus { border-bottom-color: var(--border2); }
-.leading-tag { font-size: 10px; font-weight: 600; color: #0d0d0d; background: var(--p1); padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
-.leading-tag-2 { background: var(--p2); }
-.balance { font-size: 28px; font-weight: 700; letter-spacing: -1px; margin-bottom: 4px; font-variant-numeric: tabular-nums; }
-.pnl { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
-.pnl .pos { color: var(--won); font-weight: 600; }
-.pnl .neg { color: var(--lost); font-weight: 600; }
-.mini-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
-.mini-stat { background: var(--bg); border-radius: 8px; padding: 7px 8px; text-align: center; }
-.mini-stat-val { font-size: 14px; font-weight: 600; display: block; }
-.mini-stat-lbl { font-size: 10px; color: var(--muted); display: block; margin-top: 1px; }
+/* SCOREBOARD */
+.scoreboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:1.75rem}
+.player-card{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;position:relative;overflow:hidden}
+.player-card.leading{border-color:var(--p1)}
+.pc-accent{position:absolute;top:0;left:0;right:0;height:2px}
+.player-top{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.player-name-display{font-size:15px;font-weight:600;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.leading-tag{font-size:10px;font-weight:600;color:#0d0d0d;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.balance{font-size:28px;font-weight:700;letter-spacing:-1px;margin-bottom:4px;font-variant-numeric:tabular-nums}
+.pnl{font-size:13px;color:var(--muted);margin-bottom:12px}
+.pnl .pos{color:var(--won);font-weight:600}
+.pnl .neg{color:var(--lost);font-weight:600}
+.mini-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.mini-stat{background:var(--bg);border-radius:8px;padding:7px 8px;text-align:center}
+.mini-stat-val{font-size:14px;font-weight:600;display:block}
+.mini-stat-lbl{font-size:10px;color:var(--muted);display:block;margin-top:1px}
 
-/* ── TABS ── */
-.tabs { display: flex; gap: 4px; margin-bottom: 1.25rem; background: var(--surface); border-radius: var(--radius); padding: 4px; width: fit-content; }
-.tab-btn { background: transparent; border: none; color: var(--muted); font-size: 13px; font-weight: 500; padding: 6px 16px; border-radius: 7px; cursor: pointer; transition: all 0.15s; }
-.tab-btn.active { background: var(--surface2); color: var(--text); }
-.tab-content { display: none; }
-.tab-content.active { display: block; }
+/* TABS */
+.tabs{display:flex;gap:4px;margin-bottom:1.25rem;background:var(--surface);border-radius:var(--radius);padding:4px;width:fit-content;flex-wrap:wrap}
+.tab-btn{background:transparent;border:none;color:var(--muted);font-size:13px;font-weight:500;padding:6px 16px;border-radius:7px;cursor:pointer;transition:all .15s}
+.tab-btn.active{background:var(--surface2);color:var(--text)}
+.tab-content{display:none}
+.tab-content.active{display:block}
 
-/* ── ADD BET ── */
-.add-section { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.25rem; }
-.section-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; }
-.form-row { display: grid; grid-template-columns: 140px 1fr 90px 80px auto; gap: 8px; align-items: end; }
-.field label { font-size: 11px; color: var(--muted); display: block; margin-bottom: 4px; }
-.field input, .field select { background: var(--bg); border: 0.5px solid var(--border2); border-radius: var(--radius); padding: 8px 10px; color: var(--text); width: 100%; }
-.field input::placeholder { color: #555; }
-.field input:focus, .field select:focus { outline: none; border-color: var(--p1); }
-.field select option { background: #1e1e1e; }
-.btn-add { background: var(--p1); color: #0d0d0d; border: none; border-radius: var(--radius); padding: 9px 18px; font-weight: 700; cursor: pointer; font-size: 13px; white-space: nowrap; align-self: flex-end; }
-.btn-add:hover { opacity: 0.88; }
+/* BET TYPE */
+.bet-type-row{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap}
+.bet-type-btn{background:var(--surface2);border:.5px solid var(--border);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .15s}
+.bet-type-btn.active{background:var(--surface3);color:var(--text);border-color:var(--border2)}
 
-/* ── FILTERS ── */
-.filters { display: flex; gap: 6px; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; }
-.filter-btn { background: var(--surface); border: 0.5px solid var(--border); border-radius: 20px; padding: 5px 14px; font-size: 12px; color: var(--muted); cursor: pointer; transition: all 0.15s; }
-.filter-btn.active { background: var(--surface2); color: var(--text); border-color: var(--border2); }
-.sort-select { background: var(--surface); border: 0.5px solid var(--border); border-radius: 20px; padding: 5px 10px; font-size: 12px; color: var(--muted); cursor: pointer; margin-left: auto; }
+/* ADD SECTION */
+.add-section{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.25rem}
+.section-label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px}
+.form-grid{display:grid;gap:8px;align-items:end}
+.fg-simple{grid-template-columns:150px 1fr 130px 90px 80px auto}
+.fg-on{grid-template-columns:130px 1fr 110px;margin-bottom:8px}
+.field label{font-size:11px;color:var(--muted);display:block;margin-bottom:4px}
+.field input,.field select{background:var(--bg);border:.5px solid var(--border2);border-radius:var(--radius);padding:8px 10px;color:var(--text);width:100%}
+.field input::placeholder{color:#555}
+.field input:focus,.field select:focus{outline:none;border-color:var(--p1)}
+.field select option{background:#1e1e1e}
+.btn-add{background:var(--p1);color:#0d0d0d;border:none;border-radius:var(--radius);padding:9px 18px;font-weight:700;cursor:pointer;font-size:13px;white-space:nowrap;align-self:flex-end}
+.btn-add:hover{opacity:.88}
+.calc-preview{font-size:12px;color:var(--muted);margin-top:8px;min-height:18px}
 
-/* ── BETS TABLE ── */
-.bets-table { width: 100%; border-collapse: collapse; }
-.bets-table th { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; padding: 6px 10px; text-align: left; border-bottom: 0.5px solid var(--border); }
-.bets-table td { padding: 10px 10px; border-bottom: 0.5px solid var(--border); font-size: 13px; vertical-align: middle; }
-.bets-table tr:last-child td { border-bottom: none; }
-.bets-table tr:hover td { background: var(--surface2); }
-.chip { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 20px; }
-.chip-1 { background: rgba(200,240,74,0.12); color: var(--p1); }
-.chip-2 { background: rgba(74,240,200,0.12); color: var(--p2); }
-.chip-won { background: rgba(74,240,154,0.12); color: var(--won); }
-.chip-lost { background: rgba(240,74,106,0.12); color: var(--lost); }
-.chip-pending { background: rgba(240,200,74,0.12); color: var(--pending); }
-.status-sel { background: transparent; border: none; font-size: 12px; cursor: pointer; color: inherit; }
-.btn-del { background: none; border: none; color: #444; cursor: pointer; font-size: 16px; padding: 0 4px; transition: color 0.15s; }
-.btn-del:hover { color: var(--lost); }
-.gain-pos { color: var(--won); font-weight: 600; }
-.gain-neg { color: var(--lost); font-weight: 600; }
-.empty { text-align: center; padding: 3rem; color: var(--muted); font-size: 13px; }
+/* ON WHO */
+.on-who-wrap{background:var(--bg);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px}
+.on-who-label{font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.6px}
+.on-who-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.on-who-field label{font-size:11px;color:var(--muted);display:block;margin-bottom:4px}
+.on-who-field input,.on-who-field select{background:var(--surface2);border:.5px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);width:100%}
+.on-who-field input:focus{outline:none;border-color:var(--p1)}
+.datalist-hint{font-size:10px;color:#555;margin-top:3px}
 
-/* ── STATS ── */
-.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 1.25rem; }
-.stat-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
-.stat-card-val { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; }
-.stat-card-lbl { font-size: 11px; color: var(--muted); margin-top: 3px; }
-.player-section-title { font-size: 13px; font-weight: 600; margin: 1.25rem 0 0.75rem; display: flex; align-items: center; gap: 8px; }
-.dot-p1 { width: 8px; height: 8px; border-radius: 50%; background: var(--p1); }
-.dot-p2 { width: 8px; height: 8px; border-radius: 50%; background: var(--p2); }
+/* COMBO/SYS */
+.combo-header{display:grid;grid-template-columns:150px 90px 1fr auto;gap:8px;align-items:end;margin-bottom:10px}
+.combo-selections{background:var(--bg);border-radius:var(--radius);padding:10px;margin-bottom:8px}
+.combo-sel-row{display:grid;grid-template-columns:1fr 75px auto;gap:8px;align-items:center;margin-bottom:6px}
+.combo-sel-row:last-child{margin-bottom:0}
+.combo-sel-row input{background:var(--surface2);border:.5px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);width:100%}
+.combo-sel-row input:focus{outline:none;border-color:var(--p1)}
+.btn-add-sel{background:var(--surface2);border:.5px solid var(--border2);color:var(--muted);border-radius:8px;padding:5px 12px;cursor:pointer;font-size:12px}
+.btn-add-sel:hover{color:var(--text)}
+.btn-rm-sel{background:none;border:none;color:#444;cursor:pointer;font-size:16px;padding:0 4px;flex-shrink:0}
+.btn-rm-sel:hover{color:var(--lost)}
+.combo-summary{display:flex;align-items:center;gap:12px;font-size:13px;padding:8px 0 2px;flex-wrap:wrap}
+.combo-cote-total{font-weight:700;color:var(--p1)}
+.combo-gain{font-weight:600;color:var(--won)}
+.system-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:13px;flex-wrap:wrap}
+.system-row label{color:var(--muted);font-size:12px}
+.system-row select{background:var(--bg);border:.5px solid var(--border2);border-radius:8px;padding:6px 10px;color:var(--text);min-width:55px}
+.sys-preview{font-size:12px;color:var(--muted);background:var(--bg);border-radius:8px;padding:8px 10px;margin-bottom:10px;line-height:1.7}
 
-/* ── CHART ── */
-.chart-wrap { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.25rem; }
-.chart-wrap canvas { max-height: 240px; }
+/* FILTERS */
+.filters{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
+.filter-btn{background:var(--surface);border:.5px solid var(--border);border-radius:20px;padding:5px 14px;font-size:12px;color:var(--muted);cursor:pointer;transition:all .15s}
+.filter-btn.active{background:var(--surface2);color:var(--text);border-color:var(--border2)}
+.sort-select{background:var(--surface);border:.5px solid var(--border);border-radius:20px;padding:5px 10px;font-size:12px;color:var(--muted);cursor:pointer;margin-left:auto}
 
-/* ── TOAST ── */
-#toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--surface2); border: 0.5px solid var(--border2); color: var(--text); font-size: 13px; padding: 10px 18px; border-radius: 20px; transition: transform 0.25s ease; z-index: 999; }
-#toast.show { transform: translateX(-50%) translateY(0); }
+/* TABLE */
+.bets-table{width:100%;border-collapse:collapse}
+.bets-table th{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;padding:6px 8px;text-align:left;border-bottom:.5px solid var(--border)}
+.bets-table td{padding:9px 8px;border-bottom:.5px solid var(--border);font-size:13px;vertical-align:middle}
+.bets-table tr:last-child td{border-bottom:none}
+.bets-table tr:hover td{background:var(--surface2)}
+.chip{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px}
+.chip-won{background:rgba(74,240,154,.12);color:var(--won)}
+.chip-lost{background:rgba(240,74,106,.12);color:var(--lost)}
+.chip-pending{background:rgba(240,200,74,.12);color:var(--pending)}
+.chip-simple{background:rgba(255,255,255,.06);color:var(--muted)}
+.chip-combo{background:rgba(200,240,74,.08);color:#a0c030}
+.chip-system{background:rgba(150,100,240,.12);color:#b090f0}
+.status-sel{background:transparent;border:none;font-size:12px;cursor:pointer;color:inherit}
+.btn-del{background:none;border:none;color:#444;cursor:pointer;font-size:16px;padding:0 4px}
+.btn-del:hover{color:var(--lost)}
+.gain-pos{color:var(--won);font-weight:600}
+.gain-neg{color:var(--lost);font-weight:600}
+.empty{text-align:center;padding:3rem;color:var(--muted);font-size:13px}
+.on-who-tag{font-size:11px;color:var(--muted);margin-top:2px}
+.on-who-tag span{color:var(--text)}
+.expand-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;padding:0 2px}
+.bet-detail-row td{padding:0!important;border:none!important}
+.bet-detail-inner{background:var(--bg);border-radius:8px;padding:8px 12px;margin:0 0 6px;font-size:12px;color:var(--muted);line-height:1.8}
+.sel-won{color:var(--won)}
+.sel-lost{color:var(--lost)}
+.sel-pending{color:var(--pending)}
 
-#app { display: none; }
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:1.25rem}
+.stat-card{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+.stat-card-val{font-size:22px;font-weight:700;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.stat-card-lbl{font-size:11px;color:var(--muted);margin-top:3px}
+.player-section-title{font-size:13px;font-weight:600;margin:1.25rem 0 .75rem;display:flex;align-items:center;gap:8px}
+.color-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 
-@media (max-width: 600px) {
-  .scoreboard { grid-template-columns: 1fr; }
-  .form-row { grid-template-columns: 1fr 1fr; }
+/* CHART */
+.chart-wrap{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.25rem}
+.chart-wrap canvas{max-height:260px}
+
+/* JOUEURS PANEL */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:flex;align-items:center;justify-content:center;padding:1rem}
+.modal{background:var(--surface);border:.5px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;width:100%;max-width:440px;max-height:80vh;overflow-y:auto}
+.modal-title{font-size:16px;font-weight:600;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between}
+.btn-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;line-height:1}
+.btn-close:hover{color:var(--text)}
+.player-list-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:.5px solid var(--border)}
+.player-list-item:last-child{border-bottom:none}
+.pli-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.pli-info{flex:1;min-width:0}
+.pli-name{font-size:14px;font-weight:500}
+.pli-email{font-size:11px;color:var(--muted)}
+.pli-me{font-size:10px;color:var(--p1);background:rgba(200,240,74,.1);padding:1px 6px;border-radius:10px}
+.btn-rm-player{background:none;border:none;color:#444;cursor:pointer;font-size:15px;padding:0 4px}
+.btn-rm-player:hover{color:var(--lost)}
+.add-player-row{display:flex;gap:8px;margin-top:12px;align-items:center}
+.add-player-row input{flex:1;background:var(--bg);border:.5px solid var(--border2);border-radius:var(--radius);padding:9px 12px;color:var(--text)}
+.add-player-row input:focus{outline:none;border-color:var(--p1)}
+.btn-sm{background:var(--p1);color:#0d0d0d;border:none;border-radius:var(--radius);padding:9px 16px;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn-sm:hover{opacity:.88}
+
+/* CALC */
+.calc-box{background:var(--surface);border:.5px solid var(--border2);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.25rem}
+.calc-title{font-size:13px;font-weight:600;margin-bottom:12px}
+.calc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:12px}
+.calc-field label{font-size:11px;color:var(--muted);display:block;margin-bottom:4px}
+.calc-field input,.calc-field select{background:var(--bg);border:.5px solid var(--border2);border-radius:var(--radius);padding:8px 10px;color:var(--text);width:100%}
+.calc-field input:focus{outline:none;border-color:var(--p1)}
+.calc-result{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.calc-res-card{background:var(--bg);border-radius:8px;padding:10px 12px;text-align:center}
+.calc-res-val{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+.calc-res-lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.sim-sel-row{display:grid;grid-template-columns:1fr 80px auto;gap:8px;align-items:center;margin-bottom:6px}
+.sim-sel-row input{background:var(--bg);border:.5px solid var(--border2);border-radius:8px;padding:7px 10px;color:var(--text);width:100%}
+.sim-sel-row input:focus{outline:none;border-color:var(--p1)}
+.sys-breakdown{background:var(--bg);border-radius:8px;padding:8px 10px;margin-top:8px;font-size:12px}
+.sys-breakdown table{width:100%;border-collapse:collapse}
+.sys-breakdown td{padding:3px 6px;color:var(--muted)}
+.sys-breakdown td:first-child{color:var(--text)}
+
+/* TOAST */
+#toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface2);border:.5px solid var(--border2);color:var(--text);font-size:13px;padding:10px 18px;border-radius:20px;transition:transform .25s ease;z-index:999}
+#toast.show{transform:translateX(-50%) translateY(0)}
+
+#app{display:none}
+
+/* CDM TEAMS datalist */
+@media(max-width:700px){
+  .fg-simple{grid-template-columns:1fr 1fr}
+  .fg-on{grid-template-columns:1fr}
+  .combo-header{grid-template-columns:1fr 80px auto}
+  .scoreboard{grid-template-columns:1fr}
+  .on-who-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
 
-<!-- AUTH SCREEN -->
+<!-- AUTH -->
 <div id="auth-screen">
   <div class="auth-box">
     <div class="auth-logo">⚽</div>
     <div class="auth-title">Challenge Paris CDM</div>
-    <div class="auth-sub">Bonne chance NiNils</div>
-
+    <div class="auth-sub">Connecte-toi pour accéder au tracker</div>
     <div class="auth-tabs">
-      <button class="auth-tab active" onclick="switchAuthTab('login', this)">Connexion</button>
-      <button class="auth-tab" onclick="switchAuthTab('register', this)">Inscription</button>
+      <button class="auth-tab active" onclick="switchAuthTab('login',this)">Connexion</button>
+      <button class="auth-tab" onclick="switchAuthTab('register',this)">Inscription</button>
     </div>
-
     <div id="auth-login">
-      <div class="auth-field"><label>Email</label><input id="login-email" type="email" placeholder="toi@email.com" /></div>
-      <div class="auth-field"><label>Mot de passe</label><input id="login-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')loginEmail()" /></div>
+      <div class="auth-field"><label>Email</label><input id="login-email" type="email" placeholder="toi@email.com"/></div>
+      <div class="auth-field"><label>Mot de passe</label><input id="login-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')loginEmail()"/></div>
       <button class="btn-primary" onclick="loginEmail()">Se connecter →</button>
     </div>
-
     <div id="auth-register" style="display:none">
-      <div class="auth-field"><label>Email</label><input id="reg-email" type="email" placeholder="toi@email.com" /></div>
-      <div class="auth-field"><label>Mot de passe</label><input id="reg-pass" type="password" placeholder="min. 6 caractères" onkeydown="if(event.key==='Enter')registerEmail()" /></div>
+      <div class="auth-field"><label>Pseudo (affiché dans le tracker)</label><input id="reg-name" type="text" placeholder="Ton prénom ou pseudo"/></div>
+      <div class="auth-field"><label>Email</label><input id="reg-email" type="email" placeholder="toi@email.com"/></div>
+      <div class="auth-field"><label>Mot de passe</label><input id="reg-pass" type="password" placeholder="min. 6 caractères" onkeydown="if(event.key==='Enter')registerEmail()"/></div>
       <button class="btn-primary" onclick="registerEmail()">Créer mon compte →</button>
     </div>
-
     <div class="divider">ou</div>
-
     <button class="btn-google" onclick="loginGoogle()">
-      <svg class="google-icon" viewBox="0 0 24 24">
-        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-      </svg>
+      <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
       Continuer avec Google
     </button>
-
     <div class="auth-error" id="auth-error"></div>
+  </div>
+</div>
+
+<!-- JOUEURS MODAL -->
+<div class="modal-backdrop" id="players-modal" style="display:none" onclick="if(event.target===this)closePlayersModal()">
+  <div class="modal">
+    <div class="modal-title">👥 Participants <button class="btn-close" onclick="closePlayersModal()">×</button></div>
+    <div id="players-list"></div>
+    <div class="add-player-row">
+      <input id="new-player-name" type="text" placeholder="Pseudo du nouveau joueur" onkeydown="if(event.key==='Enter')addPlayer()"/>
+      <button class="btn-sm" onclick="addPlayer()">+ Ajouter</button>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin-top:10px">Le budget de départ est de 100 € par joueur.</p>
   </div>
 </div>
 
 <!-- APP -->
 <div id="app">
-  <div class="page">
-    <header class="site-header">
-      <div>
-        <h1>⚽ Challenge Paris · Coupe du Monde</h1>
-        <div class="sub">Mise de départ : 100 € chacun</div>
-      </div>
-      <div class="header-right">
-        <div class="sync-badge"><div class="sync-dot ok" id="sync-dot"></div><span>Sync live</span></div>
-        <div class="user-chip">
-          <span id="user-label">—</span>
-          <button class="btn-logout" onclick="logout()" title="Se déconnecter">✕</button>
-        </div>
-      </div>
-    </header>
-
-    <div class="scoreboard" id="scoreboard"></div>
-
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('paris', event)">Paris</button>
-      <button class="tab-btn" onclick="switchTab('stats', event)">Statistiques</button>
-      <button class="tab-btn" onclick="switchTab('graphique', event)">Graphique</button>
+<div class="page">
+  <header class="site-header">
+    <div>
+      <h1>⚽ Challenge Paris · Coupe du Monde</h1>
+      <div class="sub">Mise de départ : 100 € chacun</div>
     </div>
+    <div class="header-right">
+      <button class="btn-icon" onclick="openPlayersModal()">👥 Joueurs</button>
+      <div class="sync-badge"><div class="sync-dot ok"></div><span>Sync live</span></div>
+      <div class="user-chip"><span id="user-label">—</span><button class="btn-logout" onclick="logout()">✕</button></div>
+    </div>
+  </header>
 
-    <div class="tab-content active" id="tab-paris">
-      <div class="add-section">
-        <div class="section-label">Ajouter un pari</div>
-        <div class="form-row">
+  <div class="scoreboard" id="scoreboard"></div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('paris',event)">Paris</button>
+    <button class="tab-btn" onclick="switchTab('stats',event)">Statistiques</button>
+    <button class="tab-btn" onclick="switchTab('graphique',event)">Graphique</button>
+    <button class="tab-btn" onclick="switchTab('calc',event)">Calculateur</button>
+  </div>
+
+  <!-- TAB PARIS -->
+  <div class="tab-content active" id="tab-paris">
+    <div class="add-section">
+      <div class="section-label">Ajouter un pari</div>
+      <div class="bet-type-row">
+        <button class="bet-type-btn active" onclick="setBetType('simple',this)">Simple</button>
+        <button class="bet-type-btn" onclick="setBetType('combo',this)">Combiné</button>
+        <button class="bet-type-btn" onclick="setBetType('system',this)">Système</button>
+      </div>
+
+      <!-- SIMPLE -->
+      <div id="form-simple">
+        <div class="form-grid fg-simple" style="margin-bottom:8px">
           <div class="field"><label>Joueur</label><select id="inp-player"></select></div>
-          <div class="field"><label>Match</label><input id="inp-match" type="text" placeholder="ex : France – Maroc" /></div>
-          <div class="field"><label>Mise (€)</label><input id="inp-stake" type="number" min="0.5" step="0.5" placeholder="10" /></div>
-          <div class="field"><label>Cote</label><input id="inp-odds" type="number" min="1.01" step="0.01" placeholder="1.80" /></div>
-          <button class="btn-add" onclick="addBet()">+ Ajouter</button>
+          <div class="field"><label>Match</label><input id="inp-match" type="text" placeholder="ex : France – Maroc"/></div>
+          <div class="field"><label>Type de pari</label>
+            <select id="inp-bet-subtype" onchange="updateOnWhoFields()">
+              <option value="match">Résultat match</option>
+              <option value="player">Performance joueur</option>
+              <option value="score">Score exact</option>
+              <option value="other">Autre</option>
+            </select>
+          </div>
+          <div class="field"><label>Mise (€)</label><input id="inp-stake" type="number" min="0.5" step="0.5" placeholder="10" oninput="updateSimpleCalc()"/></div>
+          <div class="field"><label>Cote</label><input id="inp-odds" type="number" min="1.01" step="0.01" placeholder="1.80" oninput="updateSimpleCalc()"/></div>
+          <button class="btn-add" onclick="addSimple()">+ Ajouter</button>
         </div>
+        <!-- ON WHO -->
+        <div class="on-who-wrap">
+          <div class="on-who-label">Sur qui / quoi ?</div>
+          <div class="on-who-grid" id="on-who-fields"></div>
+        </div>
+        <div class="calc-preview" id="simple-calc-preview"></div>
       </div>
-      <div class="filters">
-        <button class="filter-btn active" onclick="setFilter('all', this)">Tous</button>
-        <button class="filter-btn" onclick="setFilter('0', this)" id="filter-p1">Joueur 1</button>
-        <button class="filter-btn" onclick="setFilter('1', this)" id="filter-p2">Joueur 2</button>
-        <button class="filter-btn" onclick="setFilter('pending', this)">En cours</button>
-        <button class="filter-btn" onclick="setFilter('won', this)">Gagnés</button>
-        <button class="filter-btn" onclick="setFilter('lost', this)">Perdus</button>
-        <select class="sort-select" id="sort-sel" onchange="renderBets()">
-          <option value="date-desc">Plus récent</option>
-          <option value="date-asc">Plus ancien</option>
-          <option value="stake-desc">Mise ↓</option>
-          <option value="odds-desc">Cote ↓</option>
-        </select>
+
+      <!-- COMBO -->
+      <div id="form-combo" style="display:none">
+        <div class="combo-header">
+          <div class="field"><label>Joueur</label><select id="combo-player"></select></div>
+          <div class="field"><label>Mise (€)</label><input id="combo-stake" type="number" min="0.5" step="0.5" placeholder="10" oninput="updateComboCalc()"/></div>
+          <div class="field"><label>Sur qui / quoi (optionnel)</label><input id="combo-onwho" type="text" placeholder="ex: France, Mbappé..."/></div>
+          <button class="btn-add" onclick="addCombo()" style="align-self:flex-end">+ Valider</button>
+        </div>
+        <div class="combo-selections" id="combo-sels"></div>
+        <button class="btn-add-sel" onclick="addComboSel()">+ Sélection</button>
+        <div class="combo-summary" id="combo-summary"></div>
       </div>
-      <div id="bets-container"></div>
+
+      <!-- SYSTEM -->
+      <div id="form-system" style="display:none">
+        <div class="combo-header">
+          <div class="field"><label>Joueur</label><select id="sys-player"></select></div>
+          <div class="field"><label>Mise/combiné (€)</label><input id="sys-stake" type="number" min="0.5" step="0.5" placeholder="5" oninput="updateSysCalc()"/></div>
+          <div class="field"><label>Sur qui / quoi (optionnel)</label><input id="sys-onwho" type="text" placeholder="ex: France, Mbappé..."/></div>
+          <button class="btn-add" onclick="addSystem()" style="align-self:flex-end">+ Valider</button>
+        </div>
+        <div class="system-row">
+          <label>Système :</label>
+          <select id="sys-n" onchange="updateSysCalc()"><option>2</option><option>3</option><option>4</option></select>
+          <span style="color:var(--muted);font-size:12px">parmi</span>
+          <select id="sys-m" onchange="updateSysCalc()"><option>3</option><option>4</option><option>5</option><option>6</option></select>
+        </div>
+        <div class="combo-selections" id="sys-sels"></div>
+        <button class="btn-add-sel" onclick="addSysSel()">+ Sélection</button>
+        <div class="sys-preview" id="sys-preview"></div>
+      </div>
     </div>
 
-    <div class="tab-content" id="tab-stats"><div id="stats-content"></div></div>
+    <div class="filters">
+      <button class="filter-btn active" onclick="setFilter('all',this)">Tous</button>
+      <button class="filter-btn" id="filter-players-row"></button>
+      <button class="filter-btn" onclick="setFilter('simple',this)">Simples</button>
+      <button class="filter-btn" onclick="setFilter('combo',this)">Combinés</button>
+      <button class="filter-btn" onclick="setFilter('system',this)">Systèmes</button>
+      <button class="filter-btn" onclick="setFilter('pending',this)">En cours</button>
+      <button class="filter-btn" onclick="setFilter('won',this)">Gagnés</button>
+      <button class="filter-btn" onclick="setFilter('lost',this)">Perdus</button>
+      <select class="sort-select" id="sort-sel" onchange="renderBets()">
+        <option value="date-desc">Plus récent</option>
+        <option value="date-asc">Plus ancien</option>
+        <option value="stake-desc">Mise ↓</option>
+        <option value="odds-desc">Cote ↓</option>
+      </select>
+    </div>
+    <div id="bets-container"></div>
+  </div>
 
-    <div class="tab-content" id="tab-graphique">
-      <div class="chart-wrap"><canvas id="balance-chart"></canvas></div>
+  <!-- TAB STATS -->
+  <div class="tab-content" id="tab-stats"><div id="stats-content"></div></div>
+
+  <!-- TAB GRAPHIQUE -->
+  <div class="tab-content" id="tab-graphique">
+    <div class="chart-wrap"><canvas id="balance-chart"></canvas></div>
+  </div>
+
+  <!-- TAB CALC -->
+  <div class="tab-content" id="tab-calc">
+    <div class="calc-box">
+      <div class="calc-title">🧮 Calculateur de gains</div>
+      <div class="calc-grid">
+        <div class="calc-field"><label>Type</label><select id="calc-type" onchange="runCalc()"><option value="simple">Simple</option><option value="combo">Combiné</option><option value="system">Système</option></select></div>
+        <div class="calc-field"><label>Mise totale (€)</label><input id="calc-stake" type="number" placeholder="20" oninput="runCalc()"/></div>
+        <div class="calc-field"><label>Cote totale</label><input id="calc-odds" type="number" placeholder="3.50" step="0.01" oninput="runCalc()"/></div>
+        <div class="calc-field" id="calc-extra-wrap" style="display:none"><label>Nb combinés</label><input id="calc-nbcombos" type="number" placeholder="3" oninput="runCalc()"/></div>
+      </div>
+      <div class="calc-result" id="calc-result"></div>
+    </div>
+    <div class="calc-box">
+      <div class="calc-title">⚙️ Simulateur système</div>
+      <div class="system-row">
+        <label>Système</label>
+        <select id="sim-n" onchange="runSim()"><option>2</option><option>3</option><option>4</option></select>
+        <span style="color:var(--muted);font-size:12px">/</span>
+        <select id="sim-m" onchange="runSim()"><option>3</option><option>4</option><option>5</option><option>6</option></select>
+        <label style="margin-left:8px">Mise/combiné (€)</label>
+        <input id="sim-stake" type="number" style="width:70px;background:var(--bg);border:.5px solid var(--border2);border-radius:8px;padding:6px 8px;color:var(--text)" placeholder="5" oninput="runSim()"/>
+      </div>
+      <div id="sim-sels-wrap"></div>
+      <button class="btn-add-sel" onclick="addSimSel()" style="margin-bottom:10px">+ Sélection</button>
+      <div id="sim-result"></div>
     </div>
   </div>
 </div>
+</div>
+
+<!-- Datalists CDM -->
+<datalist id="dl-teams">
+  <option>France</option><option>Brésil</option><option>Argentine</option><option>Espagne</option>
+  <option>Allemagne</option><option>Angleterre</option><option>Portugal</option><option>Pays-Bas</option>
+  <option>Belgique</option><option>Maroc</option><option>Sénégal</option><option>Japon</option>
+  <option>États-Unis</option><option>Mexique</option><option>Australie</option><option>Croatie</option>
+  <option>Italie</option><option>Uruguay</option><option>Colombie</option><option>Égypte</option>
+</datalist>
+<datalist id="dl-players">
+  <option>Mbappé</option><option>Ronaldo</option><option>Messi</option><option>Haaland</option>
+  <option>Vinicius Jr</option><option>Bellingham</option><option>Pedri</option><option>Salah</option>
+  <option>De Bruyne</option><option>Lewandowski</option><option>Neymar</option><option>Griezmann</option>
+  <option>Benzema</option><option>Müller</option><option>Kane</option><option>Rashford</option>
+</datalist>
 
 <div id="toast"></div>
 
 <script>
-// ── FIREBASE CONFIG ──
-const firebaseConfig = {
-  apiKey: "AIzaSyCB8yo3hVYp8d7VmuLQgbKk2g1nwvvxMwk",
-  authDomain: "mat-en-2-ans.firebaseapp.com",
-  databaseURL: "https://mat-en-2-ans-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "mat-en-2-ans",
-  appId: "1:768154047182:web:a9991910e6f9f518c3369f"
+// FIREBASE
+const firebaseConfig={
+  apiKey:"AIzaSyCB8yo3hVYp8d7VmuLQgbKk2g1nwvvxMwk",
+  authDomain:"mat-en-2-ans.firebaseapp.com",
+  databaseURL:"https://mat-en-2-ans-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:"mat-en-2-ans",
+  appId:"1:768154047182:web:a9991910e6f9f518c3369f"
 };
-
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.database();
-const provider = new firebase.auth.GoogleAuthProvider();
+const auth=firebase.auth();
+const db=firebase.database();
+const gProvider=new firebase.auth.GoogleAuthProvider();
 
-// ── STATE ──
-const BUDGET = 100;
-let state = { players: ['Joueur 1', 'Joueur 2'], bets: [] };
-let activeFilter = 'all';
-let chart = null;
-let currentUser = null;
+// STATE
+const BUDGET=100;
+// players = [{id, name, color}]
+let state={players:[],bets:[]};
+let activeFilter='all';
+let activeBetType='simple';
+let chart=null;
+let currentUser=null;
+let currentUserName='';
+let comboSels=[{match:'',odds:''},{match:'',odds:''}];
+let sysSels=[{match:'',odds:''},{match:'',odds:''},{match:'',odds:''}];
+let simSels=[{match:'',odds:''},{match:'',odds:''},{match:'',odds:''}];
 
-// ── AUTH UI ──
-function switchAuthTab(tab, btn) {
-  document.getElementById('auth-login').style.display = tab === 'login' ? '' : 'none';
-  document.getElementById('auth-register').style.display = tab === 'register' ? '' : 'none';
-  document.querySelectorAll('.auth-tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  setAuthError('');
+const PALETTE=['#c8f04a','#4af0c8','#f0a44a','#f04a6a','#a44af0','#4a9af0','#f0f04a','#4af04a'];
+
+// ── AUTH ──
+function switchAuthTab(tab,btn){
+  document.getElementById('auth-login').style.display=tab==='login'?'':'none';
+  document.getElementById('auth-register').style.display=tab==='register'?'':'none';
+  document.querySelectorAll('.auth-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');setAuthError('');
 }
-
-function setAuthError(msg) { document.getElementById('auth-error').textContent = msg; }
-
-function friendlyError(code) {
-  const map = {
-    'auth/user-not-found': 'Aucun compte avec cet email.',
-    'auth/wrong-password': 'Mot de passe incorrect.',
-    'auth/email-already-in-use': 'Email déjà utilisé.',
-    'auth/weak-password': 'Mot de passe trop court (min. 6 caractères).',
-    'auth/invalid-email': 'Email invalide.',
-    'auth/popup-closed-by-user': 'Connexion annulée.',
-    'auth/invalid-credential': 'Email ou mot de passe incorrect.',
-  };
-  return map[code] || 'Erreur : ' + code;
+function setAuthError(m){document.getElementById('auth-error').textContent=m}
+function fe(code){return({'auth/user-not-found':'Aucun compte avec cet email.','auth/wrong-password':'Mot de passe incorrect.','auth/email-already-in-use':'Email déjà utilisé.','auth/weak-password':'Mot de passe trop court.','auth/invalid-email':'Email invalide.','auth/popup-closed-by-user':'Connexion annulée.','auth/invalid-credential':'Email ou mot de passe incorrect.'}[code]||'Erreur : '+code)}
+async function loginEmail(){
+  const e=document.getElementById('login-email').value.trim(),p=document.getElementById('login-pass').value;
+  if(!e||!p){setAuthError('Remplis tous les champs.');return}
+  try{await auth.signInWithEmailAndPassword(e,p)}catch(err){setAuthError(fe(err.code))}
 }
-
-async function loginEmail() {
-  const email = document.getElementById('login-email').value.trim();
-  const pass = document.getElementById('login-pass').value;
-  if (!email || !pass) { setAuthError('Remplis tous les champs.'); return; }
-  try { await auth.signInWithEmailAndPassword(email, pass); }
-  catch(e) { setAuthError(friendlyError(e.code)); }
+async function registerEmail(){
+  const name=document.getElementById('reg-name').value.trim();
+  const e=document.getElementById('reg-email').value.trim(),p=document.getElementById('reg-pass').value;
+  if(!name||!e||!p){setAuthError('Remplis tous les champs.');return}
+  try{
+    const cred=await auth.createUserWithEmailAndPassword(e,p);
+    await cred.user.updateProfile({displayName:name});
+  }catch(err){setAuthError(fe(err.code))}
 }
+async function loginGoogle(){try{await auth.signInWithPopup(gProvider)}catch(err){setAuthError(fe(err.code))}}
+function logout(){auth.signOut()}
 
-async function registerEmail() {
-  const email = document.getElementById('reg-email').value.trim();
-  const pass = document.getElementById('reg-pass').value;
-  if (!email || !pass) { setAuthError('Remplis tous les champs.'); return; }
-  try { await auth.createUserWithEmailAndPassword(email, pass); }
-  catch(e) { setAuthError(friendlyError(e.code)); }
-}
-
-async function loginGoogle() {
-  try { await auth.signInWithPopup(provider); }
-  catch(e) { setAuthError(friendlyError(e.code)); }
-}
-
-function logout() { auth.signOut(); }
-
-// ── AUTH STATE LISTENER ──
-auth.onAuthStateChanged(user => {
-  currentUser = user;
-  if (user) {
-    document.getElementById('auth-screen').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    const label = user.displayName || user.email.split('@')[0];
-    document.getElementById('user-label').textContent = label;
+auth.onAuthStateChanged(user=>{
+  currentUser=user;
+  if(user){
+    currentUserName=user.displayName||user.email.split('@')[0];
+    document.getElementById('auth-screen').style.display='none';
+    document.getElementById('app').style.display='block';
+    document.getElementById('user-label').textContent=currentUserName;
     startListening();
-  } else {
-    document.getElementById('auth-screen').style.display = 'flex';
-    document.getElementById('app').style.display = 'none';
+  }else{
+    document.getElementById('auth-screen').style.display='flex';
+    document.getElementById('app').style.display='none';
   }
 });
 
-// ── FIREBASE DATA ──
-function startListening() {
-  db.ref('challenge').on('value', snap => {
-    const data = snap.val();
-    if (data) {
-      state.players = data.players || state.players;
-      state.bets = data.bets || [];
+// ── FIREBASE ──
+function startListening(){
+  db.ref('challenge').on('value',snap=>{
+    const d=snap.val();
+    if(d){
+      state.players=d.players||[];
+      state.bets=d.bets||[];
     }
+    // Auto-add current user if not in list
+    ensureCurrentPlayer();
     renderAll();
   });
 }
+function save(){db.ref('challenge').set({players:state.players,bets:state.bets})}
 
-function save() {
-  db.ref('challenge').set({ players: state.players, bets: state.bets });
+function ensureCurrentPlayer(){
+  if(!currentUserName)return;
+  const exists=state.players.find(p=>p.name===currentUserName);
+  if(!exists){
+    const color=PALETTE[state.players.length%PALETTE.length];
+    state.players.push({id:Date.now().toString(),name:currentUserName,color});
+    save();
+  }
+}
+
+// ── PLAYERS MODAL ──
+function openPlayersModal(){renderPlayersList();document.getElementById('players-modal').style.display='flex'}
+function closePlayersModal(){document.getElementById('players-modal').style.display='none'}
+function renderPlayersList(){
+  const el=document.getElementById('players-list');
+  el.innerHTML=state.players.map((p,i)=>{
+    const isMe=p.name===currentUserName;
+    const initials=p.name.substring(0,2).toUpperCase();
+    return`<div class="player-list-item">
+      <div class="pli-avatar" style="background:${p.color}22;color:${p.color}">${initials}</div>
+      <div class="pli-info">
+        <div class="pli-name">${esc(p.name)} ${isMe?'<span class="pli-me">Moi</span>':''}</div>
+        <div class="pli-email">${getBetCount(i)} pari${getBetCount(i)!==1?'s':''}</div>
+      </div>
+      ${!isMe?`<button class="btn-rm-player" onclick="removePlayer(${i})" title="Retirer">×</button>`:''}
+    </div>`;
+  }).join('')||'<div style="color:var(--muted);font-size:13px;padding:8px 0">Aucun joueur.</div>';
+}
+function getBetCount(pi){return state.bets.filter(b=>b.player===pi).length}
+function addPlayer(){
+  const name=document.getElementById('new-player-name').value.trim();
+  if(!name){toast('Entre un pseudo.');return}
+  if(state.players.find(p=>p.name===name)){toast('Ce pseudo existe déjà.');return}
+  const color=PALETTE[state.players.length%PALETTE.length];
+  state.players.push({id:Date.now().toString(),name,color});
+  save();renderPlayersList();renderAll();
+  document.getElementById('new-player-name').value='';
+  toast(`${name} ajouté !`);
+}
+function removePlayer(i){
+  if(state.players[i].name===currentUserName){toast('Tu ne peux pas te retirer toi-même.');return}
+  if(getBetCount(i)>0&&!confirm(`${state.players[i].name} a des paris. Retirer quand même ?`))return;
+  state.players.splice(i,1);
+  save();renderPlayersList();renderAll();
+}
+
+// ── ON WHO FIELDS ──
+function updateOnWhoFields(){
+  const sub=document.getElementById('inp-bet-subtype').value;
+  const wrap=document.getElementById('on-who-fields');
+  if(sub==='match'){
+    wrap.innerHTML=`
+      <div class="on-who-field"><label>Équipe gagnante</label><input list="dl-teams" id="ow-team" type="text" placeholder="ex: France"/><div class="datalist-hint">💡 Suggestions disponibles</div></div>
+      <div class="on-who-field"><label>Résultat prédit</label><input id="ow-result" type="text" placeholder="ex: Victoire, Match nul, 2-1"/></div>`;
+  }else if(sub==='player'){
+    wrap.innerHTML=`
+      <div class="on-who-field"><label>Joueur</label><input list="dl-players" id="ow-player" type="text" placeholder="ex: Mbappé"/><div class="datalist-hint">💡 Suggestions disponibles</div></div>
+      <div class="on-who-field"><label>Performance pariée</label><input id="ow-perf" type="text" placeholder="ex: Buteur, 2 passes déc."/></div>`;
+  }else if(sub==='score'){
+    wrap.innerHTML=`
+      <div class="on-who-field"><label>Équipe A</label><input list="dl-teams" id="ow-team-a" type="text" placeholder="ex: France"/></div>
+      <div class="on-who-field"><label>Score exact</label><input id="ow-score" type="text" placeholder="ex: 2-1"/></div>`;
+  }else{
+    wrap.innerHTML=`<div class="on-who-field" style="grid-column:1/-1"><label>Détail du pari</label><input id="ow-other" type="text" placeholder="Décris ton pari..."/></div>`;
+  }
+}
+
+function getOnWhoData(){
+  const sub=document.getElementById('inp-bet-subtype').value;
+  const g=id=>{const el=document.getElementById(id);return el?el.value.trim():''};
+  if(sub==='match')return{subtype:'match',team:g('ow-team'),result:g('ow-result')};
+  if(sub==='player')return{subtype:'player',player:g('ow-player'),perf:g('ow-perf')};
+  if(sub==='score')return{subtype:'score',teamA:g('ow-team-a'),score:g('ow-score')};
+  return{subtype:'other',detail:g('ow-other')};
+}
+
+function formatOnWho(ow){
+  if(!ow||!ow.subtype)return'';
+  if(ow.subtype==='match'){
+    let s='';
+    if(ow.team)s+=`🏳️ ${ow.team}`;
+    if(ow.result)s+=` · ${ow.result}`;
+    return s;
+  }
+  if(ow.subtype==='player'){
+    let s='';
+    if(ow.player)s+=`👤 ${ow.player}`;
+    if(ow.perf)s+=` · ${ow.perf}`;
+    return s;
+  }
+  if(ow.subtype==='score'){
+    let s='';
+    if(ow.teamA)s+=`🏳️ ${ow.teamA}`;
+    if(ow.score)s+=` · Score: ${ow.score}`;
+    return s;
+  }
+  if(ow.subtype==='other'&&ow.detail)return`📝 ${ow.detail}`;
+  return'';
+}
+
+// ── SIMPLE CALC ──
+function updateSimpleCalc(){
+  const s=parseFloat(document.getElementById('inp-stake').value)||0;
+  const o=parseFloat(document.getElementById('inp-odds').value)||0;
+  const el=document.getElementById('simple-calc-preview');
+  if(s>0&&o>1){const g=((s*o)-s).toFixed(2);const r=(s*o).toFixed(2);el.innerHTML=`Gain potentiel : <span style="color:var(--won);font-weight:600">+${g} €</span> · Retour : <span style="font-weight:500">${r} €</span>`}
+  else el.textContent='';
+}
+
+// ── CURRENT PLAYER INDEX ──
+function getCurrentPlayerIdx(){
+  const idx=state.players.findIndex(p=>p.name===currentUserName);
+  return idx>=0?idx:0;
+}
+
+// ── SYNC ALL SELECTS ──
+function syncPlayerSelects(){
+  const opts=state.players.map((p,i)=>`<option value="${i}">${esc(p.name)}</option>`).join('');
+  ['inp-player','combo-player','sys-player'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    const cur=el.value;
+    el.innerHTML=opts;
+    // default to current user
+    const myIdx=getCurrentPlayerIdx();
+    el.value=cur||myIdx;
+  });
+  // filter player buttons
+  const fRow=document.getElementById('filter-players-row');
+  if(fRow){
+    fRow.outerHTML=state.players.map((p,i)=>`<button class="filter-btn" onclick="setFilter('p${i}',this)">${esc(p.name)}</button>`).join('');
+  }
+}
+
+// ── COMBO ──
+function renderComboSels(){
+  document.getElementById('combo-sels').innerHTML=comboSels.map((s,i)=>`
+    <div class="combo-sel-row">
+      <input type="text" value="${esc(s.match)}" placeholder="Match / sélection ${i+1}" oninput="comboSels[${i}].match=this.value;updateComboCalc()"/>
+      <input type="number" value="${s.odds||''}" placeholder="Cote" min="1.01" step="0.01" oninput="comboSels[${i}].odds=parseFloat(this.value)||'';updateComboCalc()"/>
+      ${comboSels.length>2?`<button class="btn-rm-sel" onclick="comboSels.splice(${i},1);renderComboSels()">×</button>`:'<div></div>'}
+    </div>`).join('');
+  updateComboCalc();
+}
+function addComboSel(){comboSels.push({match:'',odds:''});renderComboSels()}
+function updateComboCalc(){
+  const tot=comboSels.reduce((a,s)=>a*(parseFloat(s.odds)||1),1);
+  const sk=parseFloat(document.getElementById('combo-stake').value)||0;
+  const g=sk>0?((sk*tot)-sk).toFixed(2):'—';
+  document.getElementById('combo-summary').innerHTML=`<span>Cote combinée : <span class="combo-cote-total">${tot.toFixed(2)}</span></span><span>Gain potentiel : <span class="combo-gain">${g!=='—'?'+'+g+' €':'—'}</span></span>`;
+}
+function addCombo(){
+  const pi=parseInt(document.getElementById('combo-player').value);
+  const stake=parseFloat(document.getElementById('combo-stake').value);
+  const onwho=document.getElementById('combo-onwho').value.trim();
+  if(isNaN(stake)||stake<=0){toast('Entre une mise valide.');return}
+  if(comboSels.length<2){toast('Minimum 2 sélections.');return}
+  for(const s of comboSels){if(!s.match||!s.odds||s.odds<1.01){toast('Remplis tous les matchs et cotes.');return}}
+  const totalOdds=comboSels.reduce((a,s)=>a*s.odds,1);
+  state.bets.push({type:'combo',player:pi,stake,odds:parseFloat(totalOdds.toFixed(4)),onwho:onwho?{subtype:'other',detail:onwho}:null,
+    selections:comboSels.map(s=>({match:s.match,odds:parseFloat(s.odds),status:'pending'})),status:'pending',ts:Date.now()});
+  save();renderAll();
+  comboSels=[{match:'',odds:''},{match:'',odds:''}];
+  document.getElementById('combo-stake').value='';document.getElementById('combo-onwho').value='';
+  renderComboSels();toast('Combiné ajouté ✓');
+}
+
+// ── SYSTEM ──
+function getCombinations(arr,k){const r=[];function h(s,c){if(c.length===k){r.push([...c]);return}for(let i=s;i<arr.length;i++){c.push(arr[i]);h(i+1,c);c.pop()}}h(0,[]);return r}
+function renderSysSels(){
+  document.getElementById('sys-sels').innerHTML=sysSels.map((s,i)=>`
+    <div class="combo-sel-row">
+      <input type="text" value="${esc(s.match)}" placeholder="Sélection ${i+1}" oninput="sysSels[${i}].match=this.value;updateSysCalc()"/>
+      <input type="number" value="${s.odds||''}" placeholder="Cote" min="1.01" step="0.01" oninput="sysSels[${i}].odds=parseFloat(this.value)||'';updateSysCalc()"/>
+      ${sysSels.length>3?`<button class="btn-rm-sel" onclick="sysSels.splice(${i},1);renderSysSels()">×</button>`:'<div></div>'}
+    </div>`).join('');
+  updateSysCalc();
+}
+function addSysSel(){sysSels.push({match:'',odds:''});renderSysSels()}
+function updateSysCalc(){
+  const n=parseInt(document.getElementById('sys-n').value);
+  const stake=parseFloat(document.getElementById('sys-stake').value)||0;
+  const valid=sysSels.filter(s=>s.odds>=1.01);
+  const combos=getCombinations(valid.map((_,i)=>i),n);
+  const total=(stake*combos.length).toFixed(2);
+  document.getElementById('sys-preview').innerHTML=`<b>${combos.length} combiné${combos.length>1?'s':''}</b> · Mise totale : <span style="color:var(--text)">${total} €</span>`;
+}
+function addSystem(){
+  const pi=parseInt(document.getElementById('sys-player').value);
+  const n=parseInt(document.getElementById('sys-n').value);
+  const stake=parseFloat(document.getElementById('sys-stake').value);
+  const onwho=document.getElementById('sys-onwho').value.trim();
+  if(isNaN(stake)||stake<=0){toast('Entre une mise valide.');return}
+  if(sysSels.length<n+1){toast(`Besoin d'au moins ${n+1} sélections.`);return}
+  for(const s of sysSels){if(!s.match||!s.odds||s.odds<1.01){toast('Remplis tous les matchs et cotes.');return}}
+  const combos=getCombinations(sysSels.map((_,i)=>i),n);
+  state.bets.push({type:'system',player:pi,stake,n,selectionsCount:sysSels.length,
+    onwho:onwho?{subtype:'other',detail:onwho}:null,
+    selections:sysSels.map(s=>({match:s.match,odds:parseFloat(s.odds),status:'pending'})),
+    combos,odds:1,status:'pending',ts:Date.now()});
+  save();renderAll();
+  sysSels=[{match:'',odds:''},{match:'',odds:''},{match:'',odds:''}];
+  document.getElementById('sys-stake').value='';document.getElementById('sys-onwho').value='';
+  renderSysSels();toast('Système ajouté ✓');
 }
 
 // ── STATS ──
-function getStats(pi) {
-  const bets = state.bets.filter(b => b.player === pi);
-  const resolved = bets.filter(b => b.status !== 'pending');
-  const won = bets.filter(b => b.status === 'won');
-  const lost = bets.filter(b => b.status === 'lost');
-  const pending = bets.filter(b => b.status === 'pending');
-  const totalStaked = resolved.reduce((a, b) => a + b.stake, 0);
-  const totalReturns = won.reduce((a, b) => a + b.stake * b.odds, 0);
-  const pnl = totalReturns - totalStaked;
-  const pendingStake = pending.reduce((a, b) => a + b.stake, 0);
-  const balance = BUDGET - totalStaked - pendingStake + totalReturns;
-  const roi = totalStaked > 0 ? (pnl / totalStaked * 100) : 0;
-  const avgOdds = resolved.length > 0 ? resolved.reduce((a, b) => a + b.odds, 0) / resolved.length : 0;
-  const winRate = resolved.length > 0 ? (won.length / resolved.length * 100) : 0;
-  return { balance, pnl, totalStaked, totalReturns, pendingStake, roi, avgOdds, winRate, won: won.length, lost: lost.length, pending: pending.length, total: bets.length };
+function calcSystemResult(b){
+  let staked=0,returns=0,pendingStake=0,wonCombos=0,lostCombos=0,pendingCombos=0;
+  if(!b.combos)return{staked:b.stake,returns:0,pendingStake:0,wonCombos:0,lostCombos:0,pendingCombos:1};
+  b.combos.forEach(combo=>{
+    const sels=combo.map(i=>b.selections[i]);
+    const allWon=sels.every(s=>s.status==='won');
+    const anyLost=sels.some(s=>s.status==='lost');
+    const anyPending=sels.some(s=>s.status==='pending');
+    if(anyPending){pendingStake+=b.stake;pendingCombos++;}
+    else if(allWon){staked+=b.stake;const odds=sels.reduce((a,s)=>a*s.odds,1);returns+=b.stake*odds;wonCombos++;}
+    else{staked+=b.stake;lostCombos++;}
+  });
+  return{staked,returns,pendingStake,wonCombos,lostCombos,pendingCombos};
+}
+function getStats(pi){
+  const bets=state.bets.filter(b=>b.player===pi);
+  let totalStaked=0,totalReturns=0,pendingStake=0,won=0,lost=0,pending=0;
+  bets.forEach(b=>{
+    if(b.type==='system'){const r=calcSystemResult(b);totalStaked+=r.staked;totalReturns+=r.returns;pendingStake+=r.pendingStake;won+=r.wonCombos;lost+=r.lostCombos;pending+=r.pendingCombos;}
+    else if(b.status==='won'){totalStaked+=b.stake;totalReturns+=b.stake*b.odds;won++;}
+    else if(b.status==='lost'){totalStaked+=b.stake;lost++;}
+    else{pendingStake+=b.stake;pending++;}
+  });
+  const pnl=totalReturns-totalStaked;
+  const balance=BUDGET-totalStaked-pendingStake+totalReturns;
+  const roi=totalStaked>0?(pnl/totalStaked*100):0;
+  const resolved=bets.filter(b=>b.status!=='pending');
+  const avgOdds=resolved.length>0?resolved.reduce((a,b)=>a+(b.odds||1),0)/resolved.length:0;
+  const winRate=(won+lost)>0?(won/(won+lost)*100):0;
+  return{balance,pnl,totalStaked,totalReturns,pendingStake,roi,avgOdds,winRate,won,lost,pending,total:bets.length};
 }
 
-// ── RENDER ──
-function renderScoreboard() {
-  const s0 = getStats(0), s1 = getStats(1);
-  const winner = s0.balance > s1.balance ? 0 : s1.balance > s0.balance ? 1 : -1;
-  const colors = ['var(--p1)', 'var(--p2)'];
-  document.getElementById('scoreboard').innerHTML = [0,1].map(pi => {
-    const s = pi === 0 ? s0 : s1;
-    const isLead = winner === pi;
-    const cls = isLead ? (pi === 0 ? 'leading' : 'leading-2') : '';
-    const pnlSign = s.pnl >= 0 ? '+' : '';
-    const pnlCls = s.pnl >= 0 ? 'pos' : 'neg';
-    const balColor = s.balance >= BUDGET ? colors[pi] : 'var(--lost)';
-    return `<div class="player-card ${cls}">
+// ── SCOREBOARD ──
+function renderScoreboard(){
+  const scores=state.players.map((_,i)=>getStats(i));
+  const maxBal=Math.max(...scores.map(s=>s.balance));
+  document.getElementById('scoreboard').innerHTML=state.players.map((p,pi)=>{
+    const s=scores[pi];
+    const isLead=s.balance===maxBal&&state.players.length>1;
+    const pnlSign=s.pnl>=0?'+':'';
+    const pnlCls=s.pnl>=0?'pos':'neg';
+    const balColor=s.balance>=BUDGET?p.color:'var(--lost)';
+    const initials=p.name.substring(0,2).toUpperCase();
+    return`<div class="player-card${isLead?' leading':''}">
+      <div class="pc-accent" style="background:${isLead?p.color:'transparent'}"></div>
       <div class="player-top">
-        <div class="avatar avatar-${pi+1}">${state.players[pi].substring(0,2).toUpperCase()}</div>
-        <div style="flex:1;min-width:0">
-          <input class="player-name-input" value="${esc(state.players[pi])}"
-            onchange="state.players[${pi}]=this.value;save();renderAll()" title="Cliquer pour renommer"/>
-        </div>
-        ${isLead && winner !== -1 ? `<span class="leading-tag ${pi===1?'leading-tag-2':''}">🏆 En tête</span>` : ''}
+        <div class="avatar" style="background:${p.color}22;color:${p.color}">${initials}</div>
+        <div class="player-name-display">${esc(p.name)}</div>
+        ${isLead&&state.players.length>1?`<span class="leading-tag" style="background:${p.color}">🏆 En tête</span>`:''}
       </div>
       <div class="balance" style="color:${balColor}">${s.balance.toFixed(2)} €</div>
       <div class="pnl">P&L : <span class="${pnlCls}">${pnlSign}${s.pnl.toFixed(2)} €</span></div>
@@ -432,47 +795,99 @@ function renderScoreboard() {
       </div>
     </div>`;
   }).join('');
-  document.getElementById('filter-p1').textContent = state.players[0];
-  document.getElementById('filter-p2').textContent = state.players[1];
-  document.getElementById('inp-player').innerHTML = state.players.map((p,i) => `<option value="${i}">${p}</option>`).join('');
+  syncPlayerSelects();
 }
 
-function renderBets() {
-  const sort = document.getElementById('sort-sel').value;
-  let bets = state.bets.map((b,i) => ({...b, idx:i}));
-  if (activeFilter === '0' || activeFilter === '1') bets = bets.filter(b => b.player === parseInt(activeFilter));
-  else if (['pending','won','lost'].includes(activeFilter)) bets = bets.filter(b => b.status === activeFilter);
-  if (sort === 'date-desc') bets = bets.reverse();
-  else if (sort === 'stake-desc') bets.sort((a,b) => b.stake - a.stake);
-  else if (sort === 'odds-desc') bets.sort((a,b) => b.odds - a.odds);
-  const container = document.getElementById('bets-container');
-  if (!bets.length) { container.innerHTML = '<div class="empty">Aucun pari ici pour l\'instant.</div>'; return; }
-  const rows = bets.map(b => {
-    const gain = b.status==='won' ? `<span class="gain-pos">+${((b.stake*b.odds)-b.stake).toFixed(2)} €</span>`
-      : b.status==='lost' ? `<span class="gain-neg">-${b.stake.toFixed(2)} €</span>`
-      : `<span style="color:var(--muted)">—</span>`;
-    const sc = {won:'chip-won',lost:'chip-lost',pending:'chip-pending'}[b.status];
-    const opts = ['pending','won','lost'].map(s => `<option value="${s}" ${b.status===s?'selected':''}>${s==='pending'?'En cours':s==='won'?'Gagné':'Perdu'}</option>`).join('');
-    return `<tr>
-      <td><span class="chip chip-${b.player+1}">${esc(state.players[b.player])}</span></td>
-      <td>${esc(b.match)}</td><td>${b.stake.toFixed(2)} €</td><td>${b.odds}</td>
-      <td>${gain}</td>
+// ── BETS ──
+function renderBets(){
+  const sort=document.getElementById('sort-sel').value;
+  let bets=state.bets.map((b,i)=>({...b,idx:i}));
+  if(activeFilter.startsWith('p')){const pi=parseInt(activeFilter.slice(1));bets=bets.filter(b=>b.player===pi);}
+  else if(['pending','won','lost'].includes(activeFilter))bets=bets.filter(b=>b.status===activeFilter);
+  else if(['simple','combo','system'].includes(activeFilter))bets=bets.filter(b=>(b.type||'simple')===activeFilter);
+  if(sort==='date-desc')bets=[...bets].reverse();
+  else if(sort==='stake-desc')bets=[...bets].sort((a,b)=>b.stake-a.stake);
+  else if(sort==='odds-desc')bets=[...bets].sort((a,b)=>b.odds-a.odds);
+  const container=document.getElementById('bets-container');
+  if(!bets.length){container.innerHTML='<div class="empty">Aucun pari ici pour l\'instant.</div>';return}
+  const rows=bets.map(b=>{
+    const type=b.type||'simple';
+    const p=state.players[b.player]||{name:'?',color:'#888'};
+    const pChip=`<span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:${p.color}18;color:${p.color}">${esc(p.name)}</span>`;
+    const typeChip=`<span class="chip chip-${type}">${type==='simple'?'Simple':type==='combo'?'Combiné':'Système'}</span>`;
+    const sc={won:'chip-won',lost:'chip-lost',pending:'chip-pending'}[b.status];
+    const opts=['pending','won','lost'].map(s=>`<option value="${s}" ${b.status===s?'selected':''}>${s==='pending'?'⏳ En cours':s==='won'?'✓ Gagné':'✗ Perdu'}</option>`).join('');
+    const owStr=b.onwho?formatOnWho(b.onwho):'';
+    let gainHtml='<span style="color:var(--muted)">—</span>';
+    let matchCell='',oddsCell=b.odds||'—',extraRow='';
+    if(type==='simple'){
+      matchCell=esc(b.match);
+      if(b.status==='won')gainHtml=`<span class="gain-pos">+${((b.stake*b.odds)-b.stake).toFixed(2)} €</span>`;
+      else if(b.status==='lost')gainHtml=`<span class="gain-neg">-${b.stake.toFixed(2)} €</span>`;
+    }else if(type==='combo'){
+      const n=b.selections?b.selections.length:0;
+      matchCell=`Combiné ${n} sél. <button class="expand-btn" onclick="toggleDetail(${b.idx})">▾</button>`;
+      if(b.status==='won')gainHtml=`<span class="gain-pos">+${((b.stake*b.odds)-b.stake).toFixed(2)} €</span>`;
+      else if(b.status==='lost')gainHtml=`<span class="gain-neg">-${b.stake.toFixed(2)} €</span>`;
+      if(b.selections){
+        const selHtml=b.selections.map((s,i)=>`<span class="sel-${s.status||'pending'}">${esc(s.match)} @${s.odds} <select class="status-sel" style="font-size:10px" onchange="updateComboSel(${b.idx},${i},this.value)"><option value="pending" ${(s.status||'pending')==='pending'?'selected':''}>⏳</option><option value="won" ${s.status==='won'?'selected':''}>✓</option><option value="lost" ${s.status==='lost'?'selected':''}>✗</option></select></span>`).join(' · ');
+        extraRow=`<tr class="bet-detail-row" id="detail-${b.idx}" style="display:none"><td colspan="7"><div class="bet-detail-inner">${selHtml}</div></td></tr>`;
+      }
+    }else{
+      const n=b.n,m=b.selectionsCount||b.selections.length;
+      const nb=b.combos?b.combos.length:0;
+      matchCell=`Système ${n}/${m} (${nb} combinés) <button class="expand-btn" onclick="toggleDetail(${b.idx})">▾</button>`;
+      oddsCell='—';
+      const sr=calcSystemResult(b);
+      const net=sr.returns-sr.staked;
+      if(sr.pendingCombos>0)gainHtml=`<span style="color:var(--pending)">En cours</span>`;
+      else if(net>=0)gainHtml=`<span class="gain-pos">+${net.toFixed(2)} €</span>`;
+      else gainHtml=`<span class="gain-neg">${net.toFixed(2)} €</span>`;
+      if(b.selections){
+        const selHtml=b.selections.map((s,i)=>`<span class="sel-${s.status||'pending'}">${esc(s.match)} @${s.odds} <select class="status-sel" style="font-size:10px" onchange="updateSysSel(${b.idx},${i},this.value)"><option value="pending" ${(s.status||'pending')==='pending'?'selected':''}>⏳</option><option value="won" ${s.status==='won'?'selected':''}>✓</option><option value="lost" ${s.status==='lost'?'selected':''}>✗</option></select></span>`).join(' · ');
+        extraRow=`<tr class="bet-detail-row" id="detail-${b.idx}" style="display:none"><td colspan="7"><div class="bet-detail-inner">${selHtml}</div></td></tr>`;
+      }
+    }
+    return`<tr>
+      <td>${pChip}<br/>${typeChip}</td>
+      <td>${matchCell}${owStr?`<div class="on-who-tag"><span>${owStr}</span></div>`:''}</td>
+      <td>${type==='system'?b.stake+' €/c':b.stake.toFixed(2)+' €'}</td>
+      <td>${oddsCell}</td>
+      <td>${gainHtml}</td>
       <td><span class="chip ${sc}"><select class="status-sel" onchange="updateStatus(${b.idx},this.value)">${opts}</select></span></td>
       <td><button class="btn-del" onclick="deleteBet(${b.idx})">×</button></td>
-    </tr>`;
+    </tr>${extraRow}`;
   }).join('');
-  container.innerHTML = `<table class="bets-table"><thead><tr><th>Joueur</th><th>Match</th><th>Mise</th><th>Cote</th><th>Gain/Perte</th><th>Statut</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+  container.innerHTML=`<table class="bets-table"><thead><tr><th>Joueur</th><th>Pari</th><th>Mise</th><th>Cote</th><th>Gain/Perte</th><th>Statut</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
-function renderStats() {
-  let html = '';
-  [0,1].forEach(pi => {
-    const s = getStats(pi);
-    const color = pi===0 ? 'var(--p1)' : 'var(--p2)';
-    const dot = pi===0 ? 'dot-p1' : 'dot-p2';
-    html += `<div class="player-section-title"><div class="${dot}"></div>${esc(state.players[pi])}</div>
+function toggleDetail(idx){const el=document.getElementById('detail-'+idx);if(el)el.style.display=el.style.display==='none'?'':'none'}
+function updateComboSel(bi,si,val){
+  state.bets[bi].selections[si].status=val;
+  const b=state.bets[bi];
+  if(b.selections.every(s=>s.status==='won'))b.status='won';
+  else if(b.selections.some(s=>s.status==='lost'))b.status='lost';
+  else b.status='pending';
+  save();renderAll();
+}
+function updateSysSel(bi,si,val){
+  state.bets[bi].selections[si].status=val;
+  const b=state.bets[bi];
+  const r=calcSystemResult(b);
+  if(r.pendingCombos>0)b.status='pending';
+  else if(r.wonCombos>0)b.status='won';
+  else b.status='lost';
+  save();renderAll();
+}
+
+// ── STATS TAB ──
+function renderStats(){
+  let html='';
+  state.players.forEach((p,pi)=>{
+    const s=getStats(pi);
+    html+=`<div class="player-section-title"><div class="color-dot" style="background:${p.color}"></div>${esc(p.name)}</div>
     <div class="stats-grid">
-      <div class="stat-card"><div class="stat-card-val" style="color:${color}">${s.balance.toFixed(2)} €</div><div class="stat-card-lbl">Solde</div></div>
+      <div class="stat-card"><div class="stat-card-val" style="color:${p.color}">${s.balance.toFixed(2)} €</div><div class="stat-card-lbl">Solde</div></div>
       <div class="stat-card"><div class="stat-card-val" style="color:${s.roi>=0?'var(--won)':'var(--lost)'}">${s.roi.toFixed(1)} %</div><div class="stat-card-lbl">ROI</div></div>
       <div class="stat-card"><div class="stat-card-val">${s.winRate.toFixed(0)} %</div><div class="stat-card-lbl">% Réussite</div></div>
       <div class="stat-card"><div class="stat-card-val">${s.avgOdds.toFixed(2)}</div><div class="stat-card-lbl">Cote moyenne</div></div>
@@ -480,91 +895,129 @@ function renderStats() {
       <div class="stat-card"><div class="stat-card-val">${s.won} / ${s.won+s.lost}</div><div class="stat-card-lbl">Gagnés / Joués</div></div>
     </div>`;
   });
-  document.getElementById('stats-content').innerHTML = html;
+  document.getElementById('stats-content').innerHTML=html||'<div style="color:var(--muted);text-align:center;padding:2rem;font-size:13px">Aucun joueur pour l\'instant.</div>';
 }
 
-function renderChart() {
-  const resolved = state.bets.filter(b => b.status !== 'pending').sort((a,b) => a.ts - b.ts);
-  const buildSeries = pi => {
-    let bal = BUDGET; const pts = [BUDGET];
-    resolved.filter(b => b.player === pi).forEach(b => {
-      bal += b.status==='won' ? (b.stake*b.odds)-b.stake : -b.stake;
+// ── CHART ──
+function renderChart(){
+  const resolved=state.bets.filter(b=>b.status!=='pending').sort((a,b)=>a.ts-b.ts);
+  const buildSeries=pi=>{
+    let bal=BUDGET;const pts=[BUDGET];
+    resolved.filter(b=>b.player===pi).forEach(b=>{
+      if(b.type==='system'){const r=calcSystemResult(b);bal+=r.returns-r.staked;}
+      else bal+=b.status==='won'?(b.stake*b.odds)-b.stake:-b.stake;
       pts.push(parseFloat(bal.toFixed(2)));
     });
     return pts;
   };
-  const d0 = buildSeries(0), d1 = buildSeries(1);
-  const len = Math.max(d0.length, d1.length);
-  const labels = Array.from({length:len}, (_,i) => i===0 ? 'Départ' : `Pari ${i}`);
-  if (chart) chart.destroy();
-  chart = new Chart(document.getElementById('balance-chart').getContext('2d'), {
-    type: 'line',
-    data: { labels, datasets: [
-      { label: state.players[0], data: d0, borderColor:'#c8f04a', backgroundColor:'rgba(200,240,74,0.07)', tension:0.35, pointRadius:4, pointBackgroundColor:'#c8f04a' },
-      { label: state.players[1], data: d1, borderColor:'#4af0c8', backgroundColor:'rgba(74,240,200,0.07)', tension:0.35, pointRadius:4, pointBackgroundColor:'#4af0c8' }
-    ]},
-    options: {
-      responsive:true, interaction:{mode:'index',intersect:false},
-      plugins: {
-        legend:{labels:{color:'#888',font:{size:12},boxWidth:12}},
-        tooltip:{backgroundColor:'#1e1e1e',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,titleColor:'#f0ede8',bodyColor:'#aaa',callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} €`}}
-      },
-      scales: {
-        x:{ticks:{color:'#555',font:{size:11}},grid:{color:'rgba(255,255,255,0.04)'}},
-        y:{ticks:{color:'#555',font:{size:11},callback:v=>v+' €'},grid:{color:'rgba(255,255,255,0.06)'}}
+  const datasets=state.players.map((p,i)=>{
+    const d=buildSeries(i);
+    const len=Math.max(...state.players.map((_,j)=>buildSeries(j).length));
+    return{label:p.name,data:d,borderColor:p.color,backgroundColor:p.color+'12',tension:.35,pointRadius:4,pointBackgroundColor:p.color};
+  });
+  const maxLen=Math.max(...datasets.map(d=>d.data.length),1);
+  const labels=Array.from({length:maxLen},(_,i)=>i===0?'Départ':`Pari ${i}`);
+  if(chart)chart.destroy();
+  chart=new Chart(document.getElementById('balance-chart').getContext('2d'),{
+    type:'line',data:{labels,datasets},
+    options:{responsive:true,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{color:'#888',font:{size:12},boxWidth:12}},
+        tooltip:{backgroundColor:'#1e1e1e',borderColor:'rgba(255,255,255,.1)',borderWidth:1,titleColor:'#f0ede8',bodyColor:'#aaa',
+          callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} €`}}},
+      scales:{
+        x:{ticks:{color:'#555',font:{size:11}},grid:{color:'rgba(255,255,255,.04)'}},
+        y:{ticks:{color:'#555',font:{size:11},callback:v=>v+' €'},grid:{color:'rgba(255,255,255,.06)'}}
       }
     }
   });
 }
 
+// ── CALC ──
+function runCalc(){
+  const type=document.getElementById('calc-type').value;
+  const stake=parseFloat(document.getElementById('calc-stake').value)||0;
+  const odds=parseFloat(document.getElementById('calc-odds').value)||0;
+  const nb=parseInt(document.getElementById('calc-nbcombos').value)||1;
+  document.getElementById('calc-extra-wrap').style.display=type==='system'?'':'none';
+  const el=document.getElementById('calc-result');
+  if(stake<=0||odds<=1){el.innerHTML='';return}
+  const totalMise=type==='system'?(stake*nb).toFixed(2):stake.toFixed(2);
+  const ret=(parseFloat(totalMise.replace(',','.'))/nb*odds*nb).toFixed(2);
+  const gain=(ret-parseFloat(totalMise)).toFixed(2);
+  el.innerHTML=`<div class="calc-res-card"><div class="calc-res-val">${totalMise} €</div><div class="calc-res-lbl">Mise totale</div></div>
+  <div class="calc-res-card"><div class="calc-res-val" style="color:var(--won)">+${gain} €</div><div class="calc-res-lbl">Gain net</div></div>
+  <div class="calc-res-card"><div class="calc-res-val" style="color:var(--p1)">${ret} €</div><div class="calc-res-lbl">Retour total</div></div>`;
+}
+
+// ── SIMULATEUR ──
+function renderSimSels(){
+  document.getElementById('sim-sels-wrap').innerHTML=simSels.map((s,i)=>`
+    <div class="sim-sel-row">
+      <input type="text" value="${esc(s.match)}" placeholder="Sélection ${i+1}" oninput="simSels[${i}].match=this.value;runSim()"/>
+      <input type="number" value="${s.odds||''}" placeholder="Cote" min="1.01" step="0.01" oninput="simSels[${i}].odds=parseFloat(this.value)||'';runSim()"/>
+      ${simSels.length>3?`<button class="btn-rm-sel" onclick="simSels.splice(${i},1);renderSimSels();runSim()">×</button>`:'<div></div>'}
+    </div>`).join('');
+  runSim();
+}
+function addSimSel(){simSels.push({match:'',odds:''});renderSimSels()}
+function runSim(){
+  const n=parseInt(document.getElementById('sim-n').value);
+  const stake=parseFloat(document.getElementById('sim-stake').value)||5;
+  const valid=simSels.filter(s=>s.odds>=1.01);
+  if(valid.length<n){document.getElementById('sim-result').innerHTML=`<div style="color:var(--muted);font-size:13px">Ajoute au moins ${n} sélections valides.</div>`;return}
+  const combos=getCombinations(valid.map((_,i)=>i),n);
+  const totalMise=(stake*combos.length).toFixed(2);
+  const rows=combos.map((combo,ci)=>{
+    const sels=combo.map(i=>valid[i]);
+    const odds=sels.reduce((a,s)=>a*s.odds,1);
+    const gain=((stake*odds)-stake).toFixed(2);
+    const names=sels.map(s=>s.match||`Sél.${combo[0]+1}`).join(' + ');
+    return`<tr><td style="color:var(--muted)">${ci+1}</td><td>${names}</td><td style="color:var(--p1)">${odds.toFixed(2)}</td><td style="color:var(--won)">+${gain} €</td></tr>`;
+  }).join('');
+  document.getElementById('sim-result').innerHTML=`<div style="font-size:12px;color:var(--muted);margin-bottom:8px">${combos.length} combiné${combos.length>1?'s':''} · Mise totale : <span style="color:var(--text)">${totalMise} €</span></div>
+  <div class="sys-breakdown"><table><thead><tr><td></td><td style="color:var(--muted);font-size:10px;font-weight:600">SÉLECTIONS</td><td style="color:var(--muted);font-size:10px;font-weight:600">COTE</td><td style="color:var(--muted);font-size:10px;font-weight:600">GAIN NET</td></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
 // ── ACTIONS ──
-function addBet() {
-  const pi = parseInt(document.getElementById('inp-player').value);
-  const match = document.getElementById('inp-match').value.trim();
-  const stake = parseFloat(document.getElementById('inp-stake').value);
-  const odds = parseFloat(document.getElementById('inp-odds').value);
-  if (!match || isNaN(stake) || isNaN(odds) || stake<=0 || odds<1.01) { toast('Vérifie les champs.'); return; }
-  state.bets.push({player:pi, match, stake, odds, status:'pending', ts:Date.now()});
-  save(); renderAll();
-  document.getElementById('inp-match').value = '';
-  document.getElementById('inp-stake').value = '';
-  document.getElementById('inp-odds').value = '';
-  toast('Pari ajouté ✓');
+function addSimple(){
+  if(state.players.length===0){toast('Ajoute au moins un joueur d\'abord.');return}
+  const pi=parseInt(document.getElementById('inp-player').value);
+  const match=document.getElementById('inp-match').value.trim();
+  const stake=parseFloat(document.getElementById('inp-stake').value);
+  const odds=parseFloat(document.getElementById('inp-odds').value);
+  if(!match||isNaN(stake)||isNaN(odds)||stake<=0||odds<1.01){toast('Vérifie les champs.');return}
+  const ow=getOnWhoData();
+  state.bets.push({type:'simple',player:pi,match,stake,odds,onwho:ow,status:'pending',ts:Date.now()});
+  save();renderAll();
+  document.getElementById('inp-match').value='';document.getElementById('inp-stake').value='';document.getElementById('inp-odds').value='';
+  document.getElementById('simple-calc-preview').textContent='';
+  updateOnWhoFields();toast('Pari ajouté ✓');
 }
-
-function updateStatus(i, val) { state.bets[i].status = val; save(); renderAll(); }
-
-function deleteBet(i) {
-  if (!confirm('Supprimer ce pari ?')) return;
-  state.bets.splice(i,1); save(); renderAll(); toast('Pari supprimé.');
+function updateStatus(i,val){state.bets[i].status=val;save();renderAll()}
+function deleteBet(i){if(!confirm('Supprimer ce pari ?'))return;state.bets.splice(i,1);save();renderAll();toast('Pari supprimé.')}
+function setFilter(f,btn){activeFilter=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderBets()}
+function setBetType(t,btn){
+  activeBetType=t;
+  document.querySelectorAll('.bet-type-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+  document.getElementById('form-simple').style.display=t==='simple'?'':'none';
+  document.getElementById('form-combo').style.display=t==='combo'?'':'none';
+  document.getElementById('form-system').style.display=t==='system'?'':'none';
+  if(t==='combo')renderComboSels();if(t==='system')renderSysSels();
 }
-
-function setFilter(f, btn) {
-  activeFilter = f;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderBets();
-}
-
-function switchTab(name, e) {
-  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+function switchTab(name,e){
+  document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   e.currentTarget.classList.add('active');
-  if (name==='graphique') renderChart();
-  if (name==='stats') renderStats();
+  if(name==='graphique')renderChart();if(name==='stats')renderStats();
 }
-
-function renderAll() { renderScoreboard(); renderBets(); }
-function esc(s) { return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-
+function renderAll(){renderScoreboard();renderBets()}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 let toastTimer;
-function toast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg; el.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
-}
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2800)}
+
+// INIT
+updateOnWhoFields();renderComboSels();renderSysSels();renderSimSels();
 </script>
 </body>
 </html>
