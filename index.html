@@ -508,12 +508,12 @@ auth.onAuthStateChanged(user=>{
 function migrateData(d){
   // Ancienne version: players = ["Joueur 1","Joueur 2"] (strings)
   // Nouvelle version: players = [{id,name,color}]
-  let players=d.players||[];
+  let players=(d.players||[]).filter(function(p){return p!=null});
   if(players.length>0 && typeof players[0]==='string'){
     players=players.map(function(name,i){return{id:'legacy_'+i,name:name,color:PALETTE[i%PALETTE.length]}});
   }
   // S'assurer que chaque bet a un champ type
-  let bets=(d.bets||[]).map(function(b){return Object.assign({type:'simple'},b)});
+  let bets=(d.bets||[]).filter(function(b){return b!=null}).map(function(b){return Object.assign({type:'simple'},b)});
   return{players:players,bets:bets};
 }
 function startListening(){
@@ -532,15 +532,15 @@ function startListening(){
     renderAll();
   });
 }
-function save(){db.ref('challenge').set({players:state.players,bets:state.bets})}
+function save(){db.ref('challenge').set({players:state.players.filter(function(p){return p!=null}),bets:state.bets.filter(function(b){return b!=null})})}
 
 function findMyPlayer(){
   // Match by email first (most reliable), then by display name
   if(currentUserEmail){
-    const byEmail=state.players.findIndex(p=>p.email===currentUserEmail);
+    const byEmail=state.players.findIndex(p=>p&&p.email===currentUserEmail);
     if(byEmail>=0)return byEmail;
   }
-  return state.players.findIndex(p=>p.name===currentUserName);
+  return state.players.findIndex(p=>p&&p.name===currentUserName);
 }
 
 function ensureCurrentPlayer(){
@@ -565,7 +565,7 @@ function openPlayersModal(){var m=document.getElementById('players-modal');if(!m
 function closePlayersModal(){var m=document.getElementById('players-modal');if(m)m.style.display='none'}
 function renderPlayersList(){
   const el=document.getElementById('players-list');
-  el.innerHTML=state.players.map((p,i)=>{
+  el.innerHTML=state.players.filter(p=>p!=null).map((p,i)=>{
     const isMe=(currentUserEmail&&p.email===currentUserEmail)||(p.name===currentUserName);
     const initials=p.name.substring(0,2).toUpperCase();
     return`<div class="player-list-item">
@@ -582,7 +582,7 @@ function getBetCount(pi){return state.bets.filter(b=>b.player===pi).length}
 function addPlayer(){
   const name=document.getElementById('new-player-name').value.trim();
   if(!name){toast('Entre un pseudo.');return}
-  if(state.players.find(p=>p.name===name)){toast('Ce pseudo existe déjà.');return}
+  if(state.players.find(p=>p&&p.name===name)){toast('Ce pseudo existe déjà.');return}
   const color=PALETTE[state.players.length%PALETTE.length];
   state.players.push({id:Date.now().toString(),name,color});
   save();renderPlayersList();renderAll();
@@ -818,30 +818,7 @@ function renderScoreboard(){
   }).join('');
   syncPlayerSelects();
 }
-function renderPlayerSelects() {
-  // Liste des IDs des balises <select> dédiées aux joueurs
-  const selectIds = ['inp-player', 'combo-player', 'sys-player'];
-  
-  selectIds.forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    
-    // On sauvegarde l'éventuelle sélection actuelle de l'utilisateur
-    const currentVal = el.value; 
-    
-    if (state.players && state.players.length > 0) {
-      // Génération des options <option> pour chaque joueur dans le state
-      el.innerHTML = state.players.map(p => 
-        `<option value="${esc(p.id)}">${esc(p.name)}</option>`
-      ).join('');
-    } else {
-      el.innerHTML = '<option value="">Aucun joueur disponible</option>';
-    }
-    
-    // On restaure la sélection si elle existe encore
-    if (currentVal) el.value = currentVal;
-  });
-}
+
 // ── BETS ──
 function renderBets(){
   const sort=document.getElementById('sort-sel').value;
@@ -1055,7 +1032,7 @@ function switchTab(name,e){
   e.currentTarget.classList.add('active');
   if(name==='graphique')renderChart();if(name==='stats')renderStats();
 }
-function renderAll(){renderScoreboard();renderBets();renderPlayerSelects();}
+function renderAll(){renderScoreboard();renderBets()}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 let toastTimer;
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2800)}
