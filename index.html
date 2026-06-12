@@ -5,362 +5,384 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>⚽ Challenge Paris — Coupe du Monde</title>
 
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-<!-- Chart.js -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <style>
-  /* ── RESET & BASE ── */
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg: #0d0d0d;
-    --surface: #161616;
-    --surface2: #1e1e1e;
-    --border: rgba(255,255,255,0.08);
-    --border2: rgba(255,255,255,0.14);
-    --text: #f0ede8;
-    --muted: #888;
-    --p1: #c8f04a;   /* lime — joueur 1 */
-    --p2: #4af0c8;   /* teal — joueur 2 */
-    --won: #4af09a;
-    --lost: #f04a6a;
-    --pending: #f0c84a;
-    --radius: 10px;
-    --radius-lg: 16px;
-  }
-  html { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; font-size: 15px; }
-  body { min-height: 100vh; padding: 0 0 4rem; }
-  a { color: inherit; }
-  input, select, button, textarea { font-family: inherit; font-size: 14px; }
-  input[type=number]::-webkit-inner-spin-button { opacity: 0.4; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0d0d0d; --surface: #161616; --surface2: #1e1e1e;
+  --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.14);
+  --text: #f0ede8; --muted: #888;
+  --p1: #c8f04a; --p2: #4af0c8;
+  --won: #4af09a; --lost: #f04a6a; --pending: #f0c84a;
+  --radius: 10px; --radius-lg: 16px;
+}
+html { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; font-size: 15px; }
+body { min-height: 100vh; padding: 0 0 4rem; }
+input, select, button { font-family: inherit; font-size: 14px; }
+input[type=number]::-webkit-inner-spin-button { opacity: 0.4; }
+.page { max-width: 860px; margin: 0 auto; padding: 0 1.25rem; }
 
-  /* ── LAYOUT ── */
-  .page { max-width: 860px; margin: 0 auto; padding: 0 1.25rem; }
+/* ── AUTH SCREEN ── */
+#auth-screen {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem;
+}
+.auth-box {
+  background: var(--surface); border: 0.5px solid var(--border2);
+  border-radius: var(--radius-lg); padding: 2rem; width: 100%; max-width: 380px;
+}
+.auth-logo { font-size: 28px; margin-bottom: 6px; }
+.auth-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.auth-sub { font-size: 13px; color: var(--muted); margin-bottom: 1.75rem; }
+.auth-tabs { display: flex; gap: 4px; background: var(--bg); border-radius: var(--radius); padding: 3px; margin-bottom: 1.25rem; }
+.auth-tab { flex: 1; background: transparent; border: none; color: var(--muted); font-size: 13px; font-weight: 500; padding: 7px; border-radius: 8px; cursor: pointer; transition: all 0.15s; }
+.auth-tab.active { background: var(--surface2); color: var(--text); }
+.auth-field { margin-bottom: 10px; }
+.auth-field label { font-size: 11px; color: var(--muted); display: block; margin-bottom: 4px; }
+.auth-field input {
+  width: 100%; background: var(--bg); border: 0.5px solid var(--border2);
+  border-radius: var(--radius); padding: 10px 12px; color: var(--text);
+}
+.auth-field input::placeholder { color: #555; }
+.auth-field input:focus { outline: none; border-color: var(--p1); }
+.btn-primary {
+  width: 100%; background: var(--p1); color: #0d0d0d; border: none;
+  border-radius: var(--radius); padding: 11px; font-weight: 700; font-size: 14px;
+  cursor: pointer; margin-top: 6px; transition: opacity 0.15s;
+}
+.btn-primary:hover { opacity: 0.88; }
+.divider { display: flex; align-items: center; gap: 10px; margin: 14px 0; color: var(--muted); font-size: 12px; }
+.divider::before, .divider::after { content: ''; flex: 1; height: 0.5px; background: var(--border2); }
+.btn-google {
+  width: 100%; background: var(--surface2); color: var(--text);
+  border: 0.5px solid var(--border2); border-radius: var(--radius);
+  padding: 10px; font-size: 14px; font-weight: 500; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  transition: background 0.15s;
+}
+.btn-google:hover { background: #2a2a2a; }
+.google-icon { width: 18px; height: 18px; }
+.auth-error { font-size: 12px; color: var(--lost); margin-top: 8px; min-height: 16px; text-align: center; }
 
-  /* ── HEADER ── */
-  .site-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 1.5rem 0 1.25rem;
-    border-bottom: 0.5px solid var(--border2);
-    margin-bottom: 1.75rem;
-  }
-  .site-header h1 { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; }
-  .site-header .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .sync-badge { font-size: 11px; padding: 4px 10px; border-radius: 20px; border: 0.5px solid var(--border2); color: var(--muted); display: flex; align-items: center; gap: 5px; }
-  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
-  .sync-dot.ok { background: var(--won); }
+/* ── HEADER ── */
+.site-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.5rem 0 1.25rem; border-bottom: 0.5px solid var(--border2); margin-bottom: 1.75rem;
+}
+.site-header h1 { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; }
+.site-header .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.sync-badge { font-size: 11px; padding: 4px 10px; border-radius: 20px; border: 0.5px solid var(--border2); color: var(--muted); display: flex; align-items: center; gap: 5px; }
+.sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+.sync-dot.ok { background: var(--won); }
+.user-chip { font-size: 11px; padding: 4px 10px; border-radius: 20px; border: 0.5px solid var(--border2); color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.btn-logout { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 12px; padding: 0; }
+.btn-logout:hover { color: var(--lost); }
 
-  /* ── CONFIG FIREBASE ── */
-  #config-panel {
-    background: var(--surface); border: 0.5px solid var(--border2);
-    border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.75rem;
-  }
-  #config-panel h2 { font-size: 15px; font-weight: 600; margin-bottom: 0.5rem; }
-  #config-panel p { font-size: 13px; color: var(--muted); margin-bottom: 1rem; line-height: 1.6; }
-  #config-panel p a { color: var(--p1); text-decoration: none; }
-  .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
-  .config-grid input { background: var(--bg); border: 0.5px solid var(--border2); border-radius: var(--radius); padding: 8px 10px; color: var(--text); width: 100%; }
-  .config-grid input::placeholder { color: var(--muted); }
-  .config-grid input:focus { outline: none; border-color: var(--p1); }
-  #save-config { background: var(--p1); color: #0d0d0d; border: none; border-radius: var(--radius); padding: 9px 20px; font-weight: 600; cursor: pointer; font-size: 14px; }
-  #save-config:hover { opacity: 0.88; }
+/* ── SCOREBOARD ── */
+.scoreboard { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.75rem; }
+.player-card {
+  background: var(--surface); border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg); padding: 1.25rem; position: relative; overflow: hidden;
+}
+.player-card.leading { border-color: var(--p1); }
+.player-card.leading-2 { border-color: var(--p2); }
+.player-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: transparent; }
+.player-card.leading::before { background: var(--p1); }
+.player-card.leading-2::before { background: var(--p2); }
+.player-top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.avatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+.avatar-1 { background: rgba(200,240,74,0.15); color: var(--p1); }
+.avatar-2 { background: rgba(74,240,200,0.15); color: var(--p2); }
+.player-name-input { background: transparent; border: none; outline: none; font-size: 15px; font-weight: 600; color: var(--text); width: 100%; cursor: pointer; border-bottom: 1px solid transparent; transition: border-color 0.15s; }
+.player-name-input:focus { border-bottom-color: var(--border2); }
+.leading-tag { font-size: 10px; font-weight: 600; color: #0d0d0d; background: var(--p1); padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+.leading-tag-2 { background: var(--p2); }
+.balance { font-size: 28px; font-weight: 700; letter-spacing: -1px; margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+.pnl { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+.pnl .pos { color: var(--won); font-weight: 600; }
+.pnl .neg { color: var(--lost); font-weight: 600; }
+.mini-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+.mini-stat { background: var(--bg); border-radius: 8px; padding: 7px 8px; text-align: center; }
+.mini-stat-val { font-size: 14px; font-weight: 600; display: block; }
+.mini-stat-lbl { font-size: 10px; color: var(--muted); display: block; margin-top: 1px; }
 
-  /* ── SCOREBOARD ── */
-  .scoreboard { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.75rem; }
-  .player-card {
-    background: var(--surface); border: 0.5px solid var(--border);
-    border-radius: var(--radius-lg); padding: 1.25rem;
-    position: relative; overflow: hidden;
-  }
-  .player-card.leading { border-color: var(--p1); }
-  .player-card.leading-2 { border-color: var(--p2); }
-  .player-card::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-    background: transparent;
-  }
-  .player-card.leading::before { background: var(--p1); }
-  .player-card.leading-2::before { background: var(--p2); }
-  .player-top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-  .avatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
-  .avatar-1 { background: rgba(200,240,74,0.15); color: var(--p1); }
-  .avatar-2 { background: rgba(74,240,200,0.15); color: var(--p2); }
-  .player-name-input {
-    background: transparent; border: none; outline: none;
-    font-size: 15px; font-weight: 600; color: var(--text); width: 100%;
-    cursor: pointer; border-bottom: 1px solid transparent;
-    transition: border-color 0.15s;
-  }
-  .player-name-input:focus { border-bottom-color: var(--border2); }
-  .leading-tag { font-size: 10px; font-weight: 600; color: #0d0d0d; background: var(--p1); padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
-  .leading-tag-2 { background: var(--p2); }
-  .balance { font-size: 28px; font-weight: 700; letter-spacing: -1px; margin-bottom: 4px; font-variant-numeric: tabular-nums; }
-  .pnl { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
-  .pnl span { font-weight: 600; }
-  .pnl .pos { color: var(--won); }
-  .pnl .neg { color: var(--lost); }
-  .mini-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
-  .mini-stat { background: var(--bg); border-radius: 8px; padding: 7px 8px; text-align: center; }
-  .mini-stat-val { font-size: 14px; font-weight: 600; display: block; }
-  .mini-stat-lbl { font-size: 10px; color: var(--muted); display: block; margin-top: 1px; }
+/* ── TABS ── */
+.tabs { display: flex; gap: 4px; margin-bottom: 1.25rem; background: var(--surface); border-radius: var(--radius); padding: 4px; width: fit-content; }
+.tab-btn { background: transparent; border: none; color: var(--muted); font-size: 13px; font-weight: 500; padding: 6px 16px; border-radius: 7px; cursor: pointer; transition: all 0.15s; }
+.tab-btn.active { background: var(--surface2); color: var(--text); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
 
-  /* ── TABS ── */
-  .tabs { display: flex; gap: 4px; margin-bottom: 1.25rem; background: var(--surface); border-radius: var(--radius); padding: 4px; width: fit-content; }
-  .tab-btn { background: transparent; border: none; color: var(--muted); font-size: 13px; font-weight: 500; padding: 6px 16px; border-radius: 7px; cursor: pointer; transition: all 0.15s; }
-  .tab-btn.active { background: var(--surface2); color: var(--text); }
-  .tab-content { display: none; }
-  .tab-content.active { display: block; }
+/* ── ADD BET ── */
+.add-section { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.25rem; }
+.section-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; }
+.form-row { display: grid; grid-template-columns: 140px 1fr 90px 80px auto; gap: 8px; align-items: end; }
+.field label { font-size: 11px; color: var(--muted); display: block; margin-bottom: 4px; }
+.field input, .field select { background: var(--bg); border: 0.5px solid var(--border2); border-radius: var(--radius); padding: 8px 10px; color: var(--text); width: 100%; }
+.field input::placeholder { color: #555; }
+.field input:focus, .field select:focus { outline: none; border-color: var(--p1); }
+.field select option { background: #1e1e1e; }
+.btn-add { background: var(--p1); color: #0d0d0d; border: none; border-radius: var(--radius); padding: 9px 18px; font-weight: 700; cursor: pointer; font-size: 13px; white-space: nowrap; align-self: flex-end; }
+.btn-add:hover { opacity: 0.88; }
 
-  /* ── ADD BET FORM ── */
-  .add-section { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.25rem; }
-  .section-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; }
-  .form-row { display: grid; grid-template-columns: 140px 1fr 90px 80px auto; gap: 8px; align-items: end; }
-  .field label { font-size: 11px; color: var(--muted); display: block; margin-bottom: 4px; }
-  .field input, .field select {
-    background: var(--bg); border: 0.5px solid var(--border2); border-radius: var(--radius);
-    padding: 8px 10px; color: var(--text); width: 100%;
-  }
-  .field input::placeholder { color: #555; }
-  .field input:focus, .field select:focus { outline: none; border-color: var(--p1); }
-  .field select option { background: #1e1e1e; }
-  .btn-add { background: var(--p1); color: #0d0d0d; border: none; border-radius: var(--radius); padding: 9px 18px; font-weight: 700; cursor: pointer; font-size: 13px; white-space: nowrap; align-self: flex-end; }
-  .btn-add:hover { opacity: 0.88; }
+/* ── FILTERS ── */
+.filters { display: flex; gap: 6px; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; }
+.filter-btn { background: var(--surface); border: 0.5px solid var(--border); border-radius: 20px; padding: 5px 14px; font-size: 12px; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+.filter-btn.active { background: var(--surface2); color: var(--text); border-color: var(--border2); }
+.sort-select { background: var(--surface); border: 0.5px solid var(--border); border-radius: 20px; padding: 5px 10px; font-size: 12px; color: var(--muted); cursor: pointer; margin-left: auto; }
 
-  /* ── FILTERS ── */
-  .filters { display: flex; gap: 6px; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; }
-  .filter-btn { background: var(--surface); border: 0.5px solid var(--border); border-radius: 20px; padding: 5px 14px; font-size: 12px; color: var(--muted); cursor: pointer; transition: all 0.15s; }
-  .filter-btn.active { background: var(--surface2); color: var(--text); border-color: var(--border2); }
-  .sort-select { background: var(--surface); border: 0.5px solid var(--border); border-radius: 20px; padding: 5px 10px; font-size: 12px; color: var(--muted); cursor: pointer; margin-left: auto; }
-  .sort-select:focus { outline: none; }
+/* ── BETS TABLE ── */
+.bets-table { width: 100%; border-collapse: collapse; }
+.bets-table th { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; padding: 6px 10px; text-align: left; border-bottom: 0.5px solid var(--border); }
+.bets-table td { padding: 10px 10px; border-bottom: 0.5px solid var(--border); font-size: 13px; vertical-align: middle; }
+.bets-table tr:last-child td { border-bottom: none; }
+.bets-table tr:hover td { background: var(--surface2); }
+.chip { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 20px; }
+.chip-1 { background: rgba(200,240,74,0.12); color: var(--p1); }
+.chip-2 { background: rgba(74,240,200,0.12); color: var(--p2); }
+.chip-won { background: rgba(74,240,154,0.12); color: var(--won); }
+.chip-lost { background: rgba(240,74,106,0.12); color: var(--lost); }
+.chip-pending { background: rgba(240,200,74,0.12); color: var(--pending); }
+.status-sel { background: transparent; border: none; font-size: 12px; cursor: pointer; color: inherit; }
+.btn-del { background: none; border: none; color: #444; cursor: pointer; font-size: 16px; padding: 0 4px; transition: color 0.15s; }
+.btn-del:hover { color: var(--lost); }
+.gain-pos { color: var(--won); font-weight: 600; }
+.gain-neg { color: var(--lost); font-weight: 600; }
+.empty { text-align: center; padding: 3rem; color: var(--muted); font-size: 13px; }
 
-  /* ── BETS TABLE ── */
-  .bets-table { width: 100%; border-collapse: collapse; }
-  .bets-table th { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; padding: 6px 10px; text-align: left; border-bottom: 0.5px solid var(--border); }
-  .bets-table td { padding: 10px 10px; border-bottom: 0.5px solid var(--border); font-size: 13px; vertical-align: middle; }
-  .bets-table tr:last-child td { border-bottom: none; }
-  .bets-table tr:hover td { background: var(--surface2); }
-  .chip { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 20px; }
-  .chip-1 { background: rgba(200,240,74,0.12); color: var(--p1); }
-  .chip-2 { background: rgba(74,240,200,0.12); color: var(--p2); }
-  .chip-won { background: rgba(74,240,154,0.12); color: var(--won); }
-  .chip-lost { background: rgba(240,74,106,0.12); color: var(--lost); }
-  .chip-pending { background: rgba(240,200,74,0.12); color: var(--pending); }
-  .status-sel { background: transparent; border: none; font-size: 12px; cursor: pointer; color: inherit; }
-  .status-sel:focus { outline: none; }
-  .btn-del { background: none; border: none; color: #444; cursor: pointer; font-size: 16px; padding: 0 4px; transition: color 0.15s; }
-  .btn-del:hover { color: var(--lost); }
-  .gain-pos { color: var(--won); font-weight: 600; }
-  .gain-neg { color: var(--lost); font-weight: 600; }
-  .empty { text-align: center; padding: 3rem; color: var(--muted); font-size: 13px; }
+/* ── STATS ── */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 1.25rem; }
+.stat-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+.stat-card-val { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; }
+.stat-card-lbl { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.player-section-title { font-size: 13px; font-weight: 600; margin: 1.25rem 0 0.75rem; display: flex; align-items: center; gap: 8px; }
+.dot-p1 { width: 8px; height: 8px; border-radius: 50%; background: var(--p1); }
+.dot-p2 { width: 8px; height: 8px; border-radius: 50%; background: var(--p2); }
 
-  /* ── STATS ── */
-  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 1.25rem; }
-  .stat-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
-  .stat-card-val { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; }
-  .stat-card-lbl { font-size: 11px; color: var(--muted); margin-top: 3px; }
-  .player-section-title { font-size: 13px; font-weight: 600; margin: 1.25rem 0 0.75rem; display: flex; align-items: center; gap: 8px; }
-  .dot-p1 { width: 8px; height: 8px; border-radius: 50%; background: var(--p1); }
-  .dot-p2 { width: 8px; height: 8px; border-radius: 50%; background: var(--p2); }
+/* ── CHART ── */
+.chart-wrap { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.25rem; }
+.chart-wrap canvas { max-height: 240px; }
 
-  /* ── CHART ── */
-  .chart-wrap { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.25rem; }
-  .chart-wrap canvas { max-height: 240px; }
+/* ── TOAST ── */
+#toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--surface2); border: 0.5px solid var(--border2); color: var(--text); font-size: 13px; padding: 10px 18px; border-radius: 20px; transition: transform 0.25s ease; z-index: 999; }
+#toast.show { transform: translateX(-50%) translateY(0); }
 
-  /* ── TOAST ── */
-  #toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--surface2); border: 0.5px solid var(--border2); color: var(--text); font-size: 13px; padding: 10px 18px; border-radius: 20px; transition: transform 0.25s ease; z-index: 999; }
-  #toast.show { transform: translateX(-50%) translateY(0); }
+#app { display: none; }
 
-  /* ── RESPONSIVE ── */
-  @media (max-width: 600px) {
-    .scoreboard { grid-template-columns: 1fr; }
-    .form-row { grid-template-columns: 1fr 1fr; }
-    .mini-stats { grid-template-columns: 1fr 1fr 1fr; }
-    .config-grid { grid-template-columns: 1fr; }
-  }
+@media (max-width: 600px) {
+  .scoreboard { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr 1fr; }
+}
 </style>
 </head>
 <body>
-<div class="page">
 
-  <!-- HEADER -->
-  <header class="site-header">
-    <div>
-      <h1>⚽ Challenge Paris · Coupe du Monde</h1>
-      <div class="sub">Mise de départ : 100 € chacun</div>
-    </div>
-    <div class="sync-badge">
-      <div class="sync-dot" id="sync-dot"></div>
-      <span id="sync-label">Non connecté</span>
-    </div>
-  </header>
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">⚽</div>
+    <div class="auth-title">Challenge Paris CDM</div>
+    <div class="auth-sub">Connecte-toi pour accéder au tracker</div>
 
-  <!-- CONFIG FIREBASE -->
-  <div id="config-panel">
-    <h2>🔧 Configuration Firebase</h2>
-    <p>
-      Crée un projet sur <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a>,
-      active la <strong>Realtime Database</strong>, puis colle tes clés ci-dessous.
-      Ces infos sont sauvegardées dans ton navigateur. À faire une seule fois.
-    </p>
-    <div class="config-grid">
-      <input id="cfg-apiKey" placeholder="apiKey" />
-      <input id="cfg-projectId" placeholder="projectId" />
-      <input id="cfg-dbUrl" placeholder="databaseURL (https://xxx.firebaseio.com)" />
-      <input id="cfg-appId" placeholder="appId" />
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login', this)">Connexion</button>
+      <button class="auth-tab" onclick="switchAuthTab('register', this)">Inscription</button>
     </div>
-    <button id="save-config">Connecter Firebase →</button>
+
+    <div id="auth-login">
+      <div class="auth-field"><label>Email</label><input id="login-email" type="email" placeholder="toi@email.com" /></div>
+      <div class="auth-field"><label>Mot de passe</label><input id="login-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')loginEmail()" /></div>
+      <button class="btn-primary" onclick="loginEmail()">Se connecter →</button>
+    </div>
+
+    <div id="auth-register" style="display:none">
+      <div class="auth-field"><label>Email</label><input id="reg-email" type="email" placeholder="toi@email.com" /></div>
+      <div class="auth-field"><label>Mot de passe</label><input id="reg-pass" type="password" placeholder="min. 6 caractères" onkeydown="if(event.key==='Enter')registerEmail()" /></div>
+      <button class="btn-primary" onclick="registerEmail()">Créer mon compte →</button>
+    </div>
+
+    <div class="divider">ou</div>
+
+    <button class="btn-google" onclick="loginGoogle()">
+      <svg class="google-icon" viewBox="0 0 24 24">
+        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+      </svg>
+      Continuer avec Google
+    </button>
+
+    <div class="auth-error" id="auth-error"></div>
   </div>
+</div>
 
-  <!-- SCOREBOARD -->
-  <div class="scoreboard" id="scoreboard"></div>
-
-  <!-- TABS -->
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('paris')">Paris</button>
-    <button class="tab-btn" onclick="switchTab('stats')">Statistiques</button>
-    <button class="tab-btn" onclick="switchTab('graphique')">Graphique</button>
-  </div>
-
-  <!-- TAB: PARIS -->
-  <div class="tab-content active" id="tab-paris">
-    <div class="add-section">
-      <div class="section-label">Ajouter un pari</div>
-      <div class="form-row">
-        <div class="field">
-          <label>Joueur</label>
-          <select id="inp-player">
-            <option value="0">Joueur 1</option>
-            <option value="1">Joueur 2</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Match</label>
-          <input id="inp-match" type="text" placeholder="ex : France – Maroc" />
-        </div>
-        <div class="field">
-          <label>Mise (€)</label>
-          <input id="inp-stake" type="number" min="0.5" step="0.5" placeholder="10" />
-        </div>
-        <div class="field">
-          <label>Cote</label>
-          <input id="inp-odds" type="number" min="1.01" step="0.01" placeholder="1.80" />
-        </div>
-        <button class="btn-add" onclick="addBet()">+ Ajouter</button>
+<!-- APP -->
+<div id="app">
+  <div class="page">
+    <header class="site-header">
+      <div>
+        <h1>⚽ Challenge Paris · Coupe du Monde</h1>
+        <div class="sub">Mise de départ : 100 € chacun</div>
       </div>
+      <div class="header-right">
+        <div class="sync-badge"><div class="sync-dot ok" id="sync-dot"></div><span>Sync live</span></div>
+        <div class="user-chip">
+          <span id="user-label">—</span>
+          <button class="btn-logout" onclick="logout()" title="Se déconnecter">✕</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="scoreboard" id="scoreboard"></div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('paris', event)">Paris</button>
+      <button class="tab-btn" onclick="switchTab('stats', event)">Statistiques</button>
+      <button class="tab-btn" onclick="switchTab('graphique', event)">Graphique</button>
     </div>
 
-    <div class="filters">
-      <button class="filter-btn active" onclick="setFilter('all', this)">Tous</button>
-      <button class="filter-btn" onclick="setFilter('0', this)" id="filter-p1">Joueur 1</button>
-      <button class="filter-btn" onclick="setFilter('1', this)" id="filter-p2">Joueur 2</button>
-      <button class="filter-btn" onclick="setFilter('pending', this)">En cours</button>
-      <button class="filter-btn" onclick="setFilter('won', this)">Gagnés</button>
-      <button class="filter-btn" onclick="setFilter('lost', this)">Perdus</button>
-      <select class="sort-select" id="sort-sel" onchange="renderBets()">
-        <option value="date-desc">Plus récent</option>
-        <option value="date-asc">Plus ancien</option>
-        <option value="stake-desc">Mise ↓</option>
-        <option value="odds-desc">Cote ↓</option>
-      </select>
+    <div class="tab-content active" id="tab-paris">
+      <div class="add-section">
+        <div class="section-label">Ajouter un pari</div>
+        <div class="form-row">
+          <div class="field"><label>Joueur</label><select id="inp-player"></select></div>
+          <div class="field"><label>Match</label><input id="inp-match" type="text" placeholder="ex : France – Maroc" /></div>
+          <div class="field"><label>Mise (€)</label><input id="inp-stake" type="number" min="0.5" step="0.5" placeholder="10" /></div>
+          <div class="field"><label>Cote</label><input id="inp-odds" type="number" min="1.01" step="0.01" placeholder="1.80" /></div>
+          <button class="btn-add" onclick="addBet()">+ Ajouter</button>
+        </div>
+      </div>
+      <div class="filters">
+        <button class="filter-btn active" onclick="setFilter('all', this)">Tous</button>
+        <button class="filter-btn" onclick="setFilter('0', this)" id="filter-p1">Joueur 1</button>
+        <button class="filter-btn" onclick="setFilter('1', this)" id="filter-p2">Joueur 2</button>
+        <button class="filter-btn" onclick="setFilter('pending', this)">En cours</button>
+        <button class="filter-btn" onclick="setFilter('won', this)">Gagnés</button>
+        <button class="filter-btn" onclick="setFilter('lost', this)">Perdus</button>
+        <select class="sort-select" id="sort-sel" onchange="renderBets()">
+          <option value="date-desc">Plus récent</option>
+          <option value="date-asc">Plus ancien</option>
+          <option value="stake-desc">Mise ↓</option>
+          <option value="odds-desc">Cote ↓</option>
+        </select>
+      </div>
+      <div id="bets-container"></div>
     </div>
 
-    <div id="bets-container"></div>
-  </div>
+    <div class="tab-content" id="tab-stats"><div id="stats-content"></div></div>
 
-  <!-- TAB: STATS -->
-  <div class="tab-content" id="tab-stats">
-    <div id="stats-content"></div>
-  </div>
-
-  <!-- TAB: GRAPHIQUE -->
-  <div class="tab-content" id="tab-graphique">
-    <div class="chart-wrap">
-      <canvas id="balance-chart"></canvas>
+    <div class="tab-content" id="tab-graphique">
+      <div class="chart-wrap"><canvas id="balance-chart"></canvas></div>
     </div>
   </div>
-
 </div>
 
 <div id="toast"></div>
 
 <script>
+// ── FIREBASE CONFIG ──
+const firebaseConfig = {
+  apiKey: "AIzaSyCB8yo3hVYp8d7VmuLQgbKk2g1nwvvxMwk",
+  authDomain: "mat-en-2-ans.firebaseapp.com",
+  databaseURL: "https://mat-en-2-ans-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "mat-en-2-ans",
+  appId: "1:768154047182:web:a9991910e6f9f518c3369f"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+const provider = new firebase.auth.GoogleAuthProvider();
+
 // ── STATE ──
 const BUDGET = 100;
 let state = { players: ['Joueur 1', 'Joueur 2'], bets: [] };
 let activeFilter = 'all';
-let db = null;
 let chart = null;
+let currentUser = null;
 
-// ── FIREBASE ──
-function loadConfig() {
-  return {
-    apiKey: localStorage.getItem('fb_apiKey') || '',
-    projectId: localStorage.getItem('fb_projectId') || '',
-    dbUrl: localStorage.getItem('fb_dbUrl') || '',
-    appId: localStorage.getItem('fb_appId') || ''
+// ── AUTH UI ──
+function switchAuthTab(tab, btn) {
+  document.getElementById('auth-login').style.display = tab === 'login' ? '' : 'none';
+  document.getElementById('auth-register').style.display = tab === 'register' ? '' : 'none';
+  document.querySelectorAll('.auth-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  setAuthError('');
+}
+
+function setAuthError(msg) { document.getElementById('auth-error').textContent = msg; }
+
+function friendlyError(code) {
+  const map = {
+    'auth/user-not-found': 'Aucun compte avec cet email.',
+    'auth/wrong-password': 'Mot de passe incorrect.',
+    'auth/email-already-in-use': 'Email déjà utilisé.',
+    'auth/weak-password': 'Mot de passe trop court (min. 6 caractères).',
+    'auth/invalid-email': 'Email invalide.',
+    'auth/popup-closed-by-user': 'Connexion annulée.',
+    'auth/invalid-credential': 'Email ou mot de passe incorrect.',
   };
+  return map[code] || 'Erreur : ' + code;
 }
 
-function fillConfigInputs() {
-  const c = loadConfig();
-  document.getElementById('cfg-apiKey').value = c.apiKey;
-  document.getElementById('cfg-projectId').value = c.projectId;
-  document.getElementById('cfg-dbUrl').value = c.dbUrl;
-  document.getElementById('cfg-appId').value = c.appId;
+async function loginEmail() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  if (!email || !pass) { setAuthError('Remplis tous les champs.'); return; }
+  try { await auth.signInWithEmailAndPassword(email, pass); }
+  catch(e) { setAuthError(friendlyError(e.code)); }
 }
 
-function connectFirebase(cfg) {
-  try {
-    const app = firebase.initializeApp({
-      apiKey: cfg.apiKey,
-      authDomain: cfg.projectId + '.firebaseapp.com',
-      databaseURL: cfg.dbUrl,
-      projectId: cfg.projectId,
-      appId: cfg.appId
-    });
-    db = firebase.database(app);
-    db.ref('challenge').on('value', snap => {
-      const data = snap.val();
-      if (data) {
-        state.players = data.players || state.players;
-        state.bets = data.bets || [];
-      }
-      setSyncStatus(true);
-      renderAll();
-    }, err => { setSyncStatus(false); console.error(err); });
-    document.getElementById('config-panel').style.display = 'none';
-  } catch(e) { setSyncStatus(false); toast('Erreur Firebase : vérifie tes clés.'); }
+async function registerEmail() {
+  const email = document.getElementById('reg-email').value.trim();
+  const pass = document.getElementById('reg-pass').value;
+  if (!email || !pass) { setAuthError('Remplis tous les champs.'); return; }
+  try { await auth.createUserWithEmailAndPassword(email, pass); }
+  catch(e) { setAuthError(friendlyError(e.code)); }
 }
 
-function saveToFirebase() {
-  if (!db) { saveLocal(); return; }
+async function loginGoogle() {
+  try { await auth.signInWithPopup(provider); }
+  catch(e) { setAuthError(friendlyError(e.code)); }
+}
+
+function logout() { auth.signOut(); }
+
+// ── AUTH STATE LISTENER ──
+auth.onAuthStateChanged(user => {
+  currentUser = user;
+  if (user) {
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    const label = user.displayName || user.email.split('@')[0];
+    document.getElementById('user-label').textContent = label;
+    startListening();
+  } else {
+    document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+  }
+});
+
+// ── FIREBASE DATA ──
+function startListening() {
+  db.ref('challenge').on('value', snap => {
+    const data = snap.val();
+    if (data) {
+      state.players = data.players || state.players;
+      state.bets = data.bets || [];
+    }
+    renderAll();
+  });
+}
+
+function save() {
   db.ref('challenge').set({ players: state.players, bets: state.bets });
 }
-
-function saveLocal() {
-  localStorage.setItem('wc_challenge_state', JSON.stringify(state));
-}
-
-function setSyncStatus(ok) {
-  document.getElementById('sync-dot').className = 'sync-dot' + (ok ? ' ok' : '');
-  document.getElementById('sync-label').textContent = ok ? 'Sync en temps réel' : 'Non connecté';
-}
-
-document.getElementById('save-config').addEventListener('click', () => {
-  const cfg = {
-    apiKey: document.getElementById('cfg-apiKey').value.trim(),
-    projectId: document.getElementById('cfg-projectId').value.trim(),
-    dbUrl: document.getElementById('cfg-dbUrl').value.trim(),
-    appId: document.getElementById('cfg-appId').value.trim()
-  };
-  if (!cfg.apiKey || !cfg.projectId || !cfg.dbUrl) { toast('Remplis tous les champs.'); return; }
-  localStorage.setItem('fb_apiKey', cfg.apiKey);
-  localStorage.setItem('fb_projectId', cfg.projectId);
-  localStorage.setItem('fb_dbUrl', cfg.dbUrl);
-  localStorage.setItem('fb_appId', cfg.appId);
-  connectFirebase(cfg);
-});
 
 // ── STATS ──
 function getStats(pi) {
@@ -380,13 +402,12 @@ function getStats(pi) {
   return { balance, pnl, totalStaked, totalReturns, pendingStake, roi, avgOdds, winRate, won: won.length, lost: lost.length, pending: pending.length, total: bets.length };
 }
 
-// ── RENDER SCOREBOARD ──
+// ── RENDER ──
 function renderScoreboard() {
   const s0 = getStats(0), s1 = getStats(1);
   const winner = s0.balance > s1.balance ? 0 : s1.balance > s0.balance ? 1 : -1;
-  const el = document.getElementById('scoreboard');
   const colors = ['var(--p1)', 'var(--p2)'];
-  el.innerHTML = [0, 1].map(pi => {
+  document.getElementById('scoreboard').innerHTML = [0,1].map(pi => {
     const s = pi === 0 ? s0 : s1;
     const isLead = winner === pi;
     const cls = isLead ? (pi === 0 ? 'leading' : 'leading-2') : '';
@@ -396,28 +417,18 @@ function renderScoreboard() {
     return `<div class="player-card ${cls}">
       <div class="player-top">
         <div class="avatar avatar-${pi+1}">${state.players[pi].substring(0,2).toUpperCase()}</div>
-        <div style="flex:1; min-width:0">
+        <div style="flex:1;min-width:0">
           <input class="player-name-input" value="${esc(state.players[pi])}"
-            onchange="state.players[${pi}]=this.value; saveToFirebase(); renderAll()"
-            title="Cliquer pour renommer" />
+            onchange="state.players[${pi}]=this.value;save();renderAll()" title="Cliquer pour renommer"/>
         </div>
         ${isLead && winner !== -1 ? `<span class="leading-tag ${pi===1?'leading-tag-2':''}">🏆 En tête</span>` : ''}
       </div>
       <div class="balance" style="color:${balColor}">${s.balance.toFixed(2)} €</div>
       <div class="pnl">P&L : <span class="${pnlCls}">${pnlSign}${s.pnl.toFixed(2)} €</span></div>
       <div class="mini-stats">
-        <div class="mini-stat">
-          <span class="mini-stat-val">${s.won}/${s.total - s.pending}</span>
-          <span class="mini-stat-lbl">Réussite</span>
-        </div>
-        <div class="mini-stat">
-          <span class="mini-stat-val">${s.roi.toFixed(0)}%</span>
-          <span class="mini-stat-lbl">ROI</span>
-        </div>
-        <div class="mini-stat">
-          <span class="mini-stat-val">${s.pending}</span>
-          <span class="mini-stat-lbl">En cours</span>
-        </div>
+        <div class="mini-stat"><span class="mini-stat-val">${s.won}/${s.won+s.lost}</span><span class="mini-stat-lbl">Réussite</span></div>
+        <div class="mini-stat"><span class="mini-stat-val">${s.roi.toFixed(0)}%</span><span class="mini-stat-lbl">ROI</span></div>
+        <div class="mini-stat"><span class="mini-stat-val">${s.pending}</span><span class="mini-stat-lbl">En cours</span></div>
       </div>
     </div>`;
   }).join('');
@@ -426,54 +437,39 @@ function renderScoreboard() {
   document.getElementById('inp-player').innerHTML = state.players.map((p,i) => `<option value="${i}">${p}</option>`).join('');
 }
 
-// ── RENDER BETS ──
 function renderBets() {
   const sort = document.getElementById('sort-sel').value;
-  let bets = state.bets.map((b, i) => ({ ...b, idx: i }));
+  let bets = state.bets.map((b,i) => ({...b, idx:i}));
   if (activeFilter === '0' || activeFilter === '1') bets = bets.filter(b => b.player === parseInt(activeFilter));
-  else if (activeFilter === 'pending' || activeFilter === 'won' || activeFilter === 'lost') bets = bets.filter(b => b.status === activeFilter);
+  else if (['pending','won','lost'].includes(activeFilter)) bets = bets.filter(b => b.status === activeFilter);
   if (sort === 'date-desc') bets = bets.reverse();
   else if (sort === 'stake-desc') bets.sort((a,b) => b.stake - a.stake);
   else if (sort === 'odds-desc') bets.sort((a,b) => b.odds - a.odds);
-
   const container = document.getElementById('bets-container');
   if (!bets.length) { container.innerHTML = '<div class="empty">Aucun pari ici pour l\'instant.</div>'; return; }
-
   const rows = bets.map(b => {
-    const gain = b.status === 'won' ? `<span class="gain-pos">+${((b.stake * b.odds) - b.stake).toFixed(2)} €</span>`
-      : b.status === 'lost' ? `<span class="gain-neg">-${b.stake.toFixed(2)} €</span>` : `<span style="color:var(--muted)">—</span>`;
-    const statusChip = { won: 'chip-won', lost: 'chip-lost', pending: 'chip-pending' }[b.status];
-    const statusLabel = { won: 'Gagné', lost: 'Perdu', pending: 'En cours' }[b.status];
+    const gain = b.status==='won' ? `<span class="gain-pos">+${((b.stake*b.odds)-b.stake).toFixed(2)} €</span>`
+      : b.status==='lost' ? `<span class="gain-neg">-${b.stake.toFixed(2)} €</span>`
+      : `<span style="color:var(--muted)">—</span>`;
+    const sc = {won:'chip-won',lost:'chip-lost',pending:'chip-pending'}[b.status];
     const opts = ['pending','won','lost'].map(s => `<option value="${s}" ${b.status===s?'selected':''}>${s==='pending'?'En cours':s==='won'?'Gagné':'Perdu'}</option>`).join('');
     return `<tr>
       <td><span class="chip chip-${b.player+1}">${esc(state.players[b.player])}</span></td>
-      <td>${esc(b.match)}</td>
-      <td>${b.stake.toFixed(2)} €</td>
-      <td>${b.odds}</td>
+      <td>${esc(b.match)}</td><td>${b.stake.toFixed(2)} €</td><td>${b.odds}</td>
       <td>${gain}</td>
-      <td>
-        <span class="chip ${statusChip}">
-          <select class="status-sel" onchange="updateStatus(${b.idx}, this.value)">${opts}</select>
-        </span>
-      </td>
-      <td><button class="btn-del" onclick="deleteBet(${b.idx})" title="Supprimer">×</button></td>
+      <td><span class="chip ${sc}"><select class="status-sel" onchange="updateStatus(${b.idx},this.value)">${opts}</select></span></td>
+      <td><button class="btn-del" onclick="deleteBet(${b.idx})">×</button></td>
     </tr>`;
   }).join('');
-
-  container.innerHTML = `<table class="bets-table">
-    <thead><tr><th>Joueur</th><th>Match</th><th>Mise</th><th>Cote</th><th>Gain/Perte</th><th>Statut</th><th></th></tr></thead>
-    <tbody>${rows}</tbody>
-  </table>`;
+  container.innerHTML = `<table class="bets-table"><thead><tr><th>Joueur</th><th>Match</th><th>Mise</th><th>Cote</th><th>Gain/Perte</th><th>Statut</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
-// ── RENDER STATS ──
 function renderStats() {
-  const el = document.getElementById('stats-content');
   let html = '';
-  [0,1].map(pi => {
+  [0,1].forEach(pi => {
     const s = getStats(pi);
-    const color = pi === 0 ? 'var(--p1)' : 'var(--p2)';
-    const dot = pi === 0 ? 'dot-p1' : 'dot-p2';
+    const color = pi===0 ? 'var(--p1)' : 'var(--p2)';
+    const dot = pi===0 ? 'dot-p1' : 'dot-p2';
     html += `<div class="player-section-title"><div class="${dot}"></div>${esc(state.players[pi])}</div>
     <div class="stats-grid">
       <div class="stat-card"><div class="stat-card-val" style="color:${color}">${s.balance.toFixed(2)} €</div><div class="stat-card-lbl">Solde</div></div>
@@ -481,53 +477,41 @@ function renderStats() {
       <div class="stat-card"><div class="stat-card-val">${s.winRate.toFixed(0)} %</div><div class="stat-card-lbl">% Réussite</div></div>
       <div class="stat-card"><div class="stat-card-val">${s.avgOdds.toFixed(2)}</div><div class="stat-card-lbl">Cote moyenne</div></div>
       <div class="stat-card"><div class="stat-card-val">${s.totalStaked.toFixed(2)} €</div><div class="stat-card-lbl">Total misé</div></div>
-      <div class="stat-card"><div class="stat-card-val">${s.won} / ${s.won + s.lost}</div><div class="stat-card-lbl">Gagnés / Joués</div></div>
+      <div class="stat-card"><div class="stat-card-val">${s.won} / ${s.won+s.lost}</div><div class="stat-card-lbl">Gagnés / Joués</div></div>
     </div>`;
   });
-  el.innerHTML = html;
+  document.getElementById('stats-content').innerHTML = html;
 }
 
-// ── RENDER CHART ──
 function renderChart() {
-  const wonBets = state.bets.filter(b => b.status !== 'pending').sort((a,b) => a.ts - b.ts);
-  const buildSeries = (pi) => {
-    let bal = BUDGET;
-    const pts = [{ x: 0, y: BUDGET }];
-    wonBets.filter(b => b.player === pi).forEach((b, i) => {
-      if (b.status === 'won') bal += (b.stake * b.odds) - b.stake;
-      else bal -= b.stake;
-      pts.push({ x: pts.length, y: parseFloat(bal.toFixed(2)) });
+  const resolved = state.bets.filter(b => b.status !== 'pending').sort((a,b) => a.ts - b.ts);
+  const buildSeries = pi => {
+    let bal = BUDGET; const pts = [BUDGET];
+    resolved.filter(b => b.player === pi).forEach(b => {
+      bal += b.status==='won' ? (b.stake*b.odds)-b.stake : -b.stake;
+      pts.push(parseFloat(bal.toFixed(2)));
     });
     return pts;
   };
   const d0 = buildSeries(0), d1 = buildSeries(1);
-  const labels = Array.from({ length: Math.max(d0.length, d1.length) }, (_, i) => i === 0 ? 'Départ' : `Pari ${i}`);
-
+  const len = Math.max(d0.length, d1.length);
+  const labels = Array.from({length:len}, (_,i) => i===0 ? 'Départ' : `Pari ${i}`);
   if (chart) chart.destroy();
-  const ctx = document.getElementById('balance-chart').getContext('2d');
-  chart = new Chart(ctx, {
+  chart = new Chart(document.getElementById('balance-chart').getContext('2d'), {
     type: 'line',
-    data: {
-      labels,
-      datasets: [
-        { label: state.players[0], data: d0.map(p => p.y), borderColor: '#c8f04a', backgroundColor: 'rgba(200,240,74,0.07)', tension: 0.35, pointRadius: 4, pointBackgroundColor: '#c8f04a' },
-        { label: state.players[1], data: d1.map(p => p.y), borderColor: '#4af0c8', backgroundColor: 'rgba(74,240,200,0.07)', tension: 0.35, pointRadius: 4, pointBackgroundColor: '#4af0c8' }
-      ]
-    },
+    data: { labels, datasets: [
+      { label: state.players[0], data: d0, borderColor:'#c8f04a', backgroundColor:'rgba(200,240,74,0.07)', tension:0.35, pointRadius:4, pointBackgroundColor:'#c8f04a' },
+      { label: state.players[1], data: d1, borderColor:'#4af0c8', backgroundColor:'rgba(74,240,200,0.07)', tension:0.35, pointRadius:4, pointBackgroundColor:'#4af0c8' }
+    ]},
     options: {
-      responsive: true,
-      interaction: { mode: 'index', intersect: false },
+      responsive:true, interaction:{mode:'index',intersect:false},
       plugins: {
-        legend: { labels: { color: '#888', font: { size: 12 }, boxWidth: 12 } },
-        tooltip: {
-          backgroundColor: '#1e1e1e', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
-          titleColor: '#f0ede8', bodyColor: '#aaa',
-          callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} €` }
-        }
+        legend:{labels:{color:'#888',font:{size:12},boxWidth:12}},
+        tooltip:{backgroundColor:'#1e1e1e',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,titleColor:'#f0ede8',bodyColor:'#aaa',callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} €`}}
       },
       scales: {
-        x: { ticks: { color: '#555', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
-        y: { ticks: { color: '#555', font: { size: 11 }, callback: v => v + ' €' }, grid: { color: 'rgba(255,255,255,0.06)' } }
+        x:{ticks:{color:'#555',font:{size:11}},grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{ticks:{color:'#555',font:{size:11},callback:v=>v+' €'},grid:{color:'rgba(255,255,255,0.06)'}}
       }
     }
   });
@@ -539,30 +523,20 @@ function addBet() {
   const match = document.getElementById('inp-match').value.trim();
   const stake = parseFloat(document.getElementById('inp-stake').value);
   const odds = parseFloat(document.getElementById('inp-odds').value);
-  if (!match || isNaN(stake) || isNaN(odds) || stake <= 0 || odds < 1.01) {
-    toast('Vérifie les champs — mise > 0, cote ≥ 1.01.'); return;
-  }
-  state.bets.push({ player: pi, match, stake, odds, status: 'pending', ts: Date.now() });
-  saveToFirebase();
-  renderAll();
+  if (!match || isNaN(stake) || isNaN(odds) || stake<=0 || odds<1.01) { toast('Vérifie les champs.'); return; }
+  state.bets.push({player:pi, match, stake, odds, status:'pending', ts:Date.now()});
+  save(); renderAll();
   document.getElementById('inp-match').value = '';
   document.getElementById('inp-stake').value = '';
   document.getElementById('inp-odds').value = '';
   toast('Pari ajouté ✓');
 }
 
-function updateStatus(i, val) {
-  state.bets[i].status = val;
-  saveToFirebase();
-  renderAll();
-}
+function updateStatus(i, val) { state.bets[i].status = val; save(); renderAll(); }
 
 function deleteBet(i) {
   if (!confirm('Supprimer ce pari ?')) return;
-  state.bets.splice(i, 1);
-  saveToFirebase();
-  renderAll();
-  toast('Pari supprimé.');
+  state.bets.splice(i,1); save(); renderAll(); toast('Pari supprimé.');
 }
 
 function setFilter(f, btn) {
@@ -572,18 +546,17 @@ function setFilter(f, btn) {
   renderBets();
 }
 
-function switchTab(name) {
+function switchTab(name, e) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('active');
-  event.currentTarget.classList.add('active');
-  if (name === 'graphique') renderChart();
-  if (name === 'stats') renderStats();
+  document.getElementById('tab-'+name).classList.add('active');
+  e.currentTarget.classList.add('active');
+  if (name==='graphique') renderChart();
+  if (name==='stats') renderStats();
 }
 
 function renderAll() { renderScoreboard(); renderBets(); }
-
-function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function esc(s) { return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 let toastTimer;
 function toast(msg) {
@@ -592,21 +565,6 @@ function toast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
 }
-
-// ── INIT ──
-function init() {
-  fillConfigInputs();
-  const cfg = loadConfig();
-  if (cfg.apiKey && cfg.dbUrl) {
-    connectFirebase(cfg);
-  } else {
-    const saved = localStorage.getItem('wc_challenge_state');
-    if (saved) { try { state = JSON.parse(saved); } catch(e) {} }
-    renderAll();
-  }
-}
-
-init();
 </script>
 </body>
 </html>
