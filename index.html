@@ -456,6 +456,7 @@ let activeBetType='simple';
 let chart=null;
 let currentUser=null;
 let currentUserName='';
+let currentUserEmail='';
 let comboSels=[{match:'',odds:''},{match:'',odds:''}];
 let sysSels=[{match:'',odds:''},{match:'',odds:''},{match:'',odds:''}];
 let simSels=[{match:'',odds:''},{match:'',odds:''},{match:'',odds:''}];
@@ -491,6 +492,7 @@ function logout(){auth.signOut()}
 auth.onAuthStateChanged(user=>{
   currentUser=user;
   if(user){
+    currentUserEmail=user.email||'';
     currentUserName=user.displayName||user.email.split('@')[0];
     document.getElementById('auth-screen').style.display='none';
     document.getElementById('app').style.display='block';
@@ -532,14 +534,30 @@ function startListening(){
 }
 function save(){db.ref('challenge').set({players:state.players,bets:state.bets})}
 
+function findMyPlayer(){
+  // Match by email first (most reliable), then by display name
+  if(currentUserEmail){
+    const byEmail=state.players.findIndex(p=>p.email===currentUserEmail);
+    if(byEmail>=0)return byEmail;
+  }
+  return state.players.findIndex(p=>p.name===currentUserName);
+}
+
 function ensureCurrentPlayer(){
   if(!currentUserName)return;
-  const exists=state.players.find(p=>p.name===currentUserName);
-  if(!exists){
-    const color=PALETTE[state.players.length%PALETTE.length];
-    state.players.push({id:Date.now().toString(),name:currentUserName,color});
-    save();
+  const idx=findMyPlayer();
+  if(idx>=0){
+    // Attach email if missing
+    if(currentUserEmail && !state.players[idx].email){
+      state.players[idx].email=currentUserEmail;
+      save();
+    }
+    return;
   }
+  // Not found: create new player
+  const color=PALETTE[state.players.length%PALETTE.length];
+  state.players.push({id:Date.now().toString(),name:currentUserName,email:currentUserEmail,color});
+  save();
 }
 
 // ── PLAYERS MODAL ──
@@ -548,7 +566,7 @@ function closePlayersModal(){var m=document.getElementById('players-modal');if(m
 function renderPlayersList(){
   const el=document.getElementById('players-list');
   el.innerHTML=state.players.map((p,i)=>{
-    const isMe=p.name===currentUserName;
+    const isMe=(currentUserEmail&&p.email===currentUserEmail)||(p.name===currentUserName);
     const initials=p.name.substring(0,2).toUpperCase();
     return`<div class="player-list-item">
       <div class="pli-avatar" style="background:${p.color}22;color:${p.color}">${initials}</div>
@@ -643,7 +661,7 @@ function updateSimpleCalc(){
 
 // ── CURRENT PLAYER INDEX ──
 function getCurrentPlayerIdx(){
-  const idx=state.players.findIndex(p=>p.name===currentUserName);
+  const idx=findMyPlayer();
   return idx>=0?idx:0;
 }
 
